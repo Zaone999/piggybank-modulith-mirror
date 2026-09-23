@@ -3,6 +3,8 @@ package be.kdg.piggybankmodulith.family.domain;
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -10,11 +12,13 @@ import java.util.List;
 
 public class Piggybank {
 
-    private PiggybankId piggybankId;
-    private OwnerId owner;
+    private final PiggybankId piggybankId;
+    private final OwnerId owner;
     private BigDecimal balance;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(Piggybank.class);
 
     public Piggybank(OwnerId owner, BigDecimal balance) {
         this(PiggybankId.create(), owner, balance);
@@ -30,21 +34,14 @@ public class Piggybank {
         return new Piggybank(owner, BigDecimal.ZERO);
     }
 
-    public PiggybankId getPiggybankId() {
-        return piggybankId;
-    }
-
     public OwnerId getOwner() {
         return owner;
-    }
-
-    public BigDecimal getBalance() {
-        return balance;
     }
 
     public void deposit(BigDecimal amount) {
         this.balance = this.balance.add(amount);
         this.domainEvents.add(new MoneyDepositedEvent(owner.uuid(), amount));
+        LOGGER.info("Deposit to piggybank, current balance: {}", balance);
     }
 
     public void withdraw(BigDecimal amount) {
@@ -53,6 +50,7 @@ public class Piggybank {
         }
         this.balance = this.balance.subtract(amount);
         this.domainEvents.add(new MoneyWithdrawalEvent(owner.uuid(), amount));
+        LOGGER.info("Withdrawal from piggybank, current balance: {}", balance);
     }
 
 
@@ -67,6 +65,9 @@ public class Piggybank {
     }
 
     public List<DomainEvent> getDomainEvents() {
-        return domainEvents;
+        return List.copyOf(domainEvents);
+    }
+    public void clearDomainEvents() {
+        domainEvents.clear();
     }
 }
