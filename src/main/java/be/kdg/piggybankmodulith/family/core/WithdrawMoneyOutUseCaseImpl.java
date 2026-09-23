@@ -3,7 +3,6 @@ package be.kdg.piggybankmodulith.family.core;
 import be.kdg.piggybankmodulith.family.domain.OwnerId;
 import be.kdg.piggybankmodulith.family.domain.Piggybank;
 import be.kdg.piggybankmodulith.family.domain.PiggybankId;
-import be.kdg.piggybankmodulith.family.domain.exceptions.FamilyMemberNotFoundException;
 import be.kdg.piggybankmodulith.family.domain.exceptions.PiggyBankNotFoundException;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawMoneyOutUseCase;
@@ -31,7 +30,7 @@ public class WithdrawMoneyOutUseCaseImpl implements WithdrawMoneyOutUseCase {
 
     @Override
     @Transactional
-    public Piggybank withdraw(WithdrawMoneyCommand command) throws FamilyMemberNotFoundException, PiggyBankNotFoundException {
+    public Piggybank withdraw(WithdrawMoneyCommand command) throws PiggyBankNotFoundException {
         Piggybank piggybank = loadPiggybankPort.loadBy(OwnerId.of(command.owner()))
                 .orElseThrow(() -> PiggybankId.notFoundForOwner(OwnerId.of(command.owner())));
 

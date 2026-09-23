@@ -10,7 +10,7 @@ import java.util.UUID;
 public class SavingsPromiseJpaEntity {
 
     @Id
-    private UUID owner;
+    private UUID grandchild;
 
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal promise;
@@ -22,18 +22,18 @@ public class SavingsPromiseJpaEntity {
     public SavingsPromiseJpaEntity() {
     }
 
-    public SavingsPromiseJpaEntity(UUID owner, BigDecimal balance, BigDecimal promise) {
-        this.owner = owner;
+    public SavingsPromiseJpaEntity(UUID grandchild, BigDecimal balance, BigDecimal promise) {
+        this.grandchild = grandchild;
         this.balance = balance;
         this.promise = promise;
     }
 
-    public UUID getOwner() {
-        return owner;
+    public UUID getGrandchild() {
+        return grandchild;
     }
 
-    public void setOwner(UUID owner) {
-        this.owner = owner;
+    public void setGrandchild(UUID grandchild) {
+        this.grandchild = grandchild;
     }
 
     public BigDecimal getBalance() {

@@ -25,8 +25,8 @@ public class SavingsBalanceChangedProjectorImpl implements SavingsBalanceChanged
     @Override
     @Transactional
     public void project(SavingsDecreaseProjectionCommand projectionCommand) {
-        SavingsPromise savingsPromise = loadSavingsPromisePort.loadBy(projectionCommand.owner())
-                .orElse(SavingsPromise.promise(projectionCommand.owner()));
+        SavingsPromise savingsPromise = loadSavingsPromisePort.loadBy(projectionCommand.grandchild())
+                .orElse(SavingsPromise.promise(projectionCommand.grandchild()));
 
         savingsPromise.decreaseBalance(projectionCommand.amount());
         updateSavingsPromisePorts.forEach(updateSavingsPromisePort ->
@@ -37,8 +37,8 @@ public class SavingsBalanceChangedProjectorImpl implements SavingsBalanceChanged
     @Override
     @Transactional
     public void project(SavingsIncreaseProjectionCommand projectionCommand) {
-        SavingsPromise savingsPromise = loadSavingsPromisePort.loadBy(projectionCommand.owner())
-                .orElse(SavingsPromise.promise(projectionCommand.owner()));
+        SavingsPromise savingsPromise = loadSavingsPromisePort.loadBy(projectionCommand.grandchild())
+                .orElse(SavingsPromise.promise(projectionCommand.grandchild()));
 
         savingsPromise.increaseBalance(projectionCommand.amount());
         updateSavingsPromisePorts.forEach(updateSavingsPromisePort -> updateSavingsPromisePort.update(savingsPromise));

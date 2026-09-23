@@ -1,68 +1,68 @@
 package be.kdg.piggybankmodulith.grandparents.domain;
 
+import be.kdg.piggybankmodulith.common.Money;
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 public class SavingsPromise {
-    private final OwnerId owner;
-    private BigDecimal balance;
-    private final BigDecimal promiseBoundary;
+    private final GrandchildId grandchild;
+    private Money balance;
+    private final Money promiseBoundary;
 
-    private static final BigDecimal DEFAULT_PROMISE = BigDecimal.valueOf(50L);
+    private static final Money DEFAULT_PROMISE = Money.FIFTY;
 
     private static final Logger logger = LoggerFactory.getLogger(SavingsPromise.class);
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
-    public static SavingsPromise promise(OwnerId owner) {
-        return new SavingsPromise(owner, BigDecimal.ZERO, DEFAULT_PROMISE);
+    public static SavingsPromise promise(GrandchildId grandchild) {
+        return new SavingsPromise(grandchild, Money.ZERO, DEFAULT_PROMISE);
     }
 
-    public SavingsPromise(OwnerId owner, BigDecimal balance, BigDecimal promiseBoundary) {
-        this.owner = owner;
+    public SavingsPromise(GrandchildId grandchild, Money balance, Money promiseBoundary) {
+        this.grandchild = grandchild;
         this.balance = balance;
         this.promiseBoundary = promiseBoundary;
     }
 
-    public SavingsPromise decreaseBalance(BigDecimal amount) {
+    public SavingsPromise decreaseBalance(Money amount) {
         this.balance = balance.subtract(amount);
         logger.info("Promise Balance decreased: {}", balance);
         return this;
     }
 
-    public SavingsPromise increaseBalance(BigDecimal amount) {
+    public SavingsPromise increaseBalance(Money amount) {
         this.balance = balance.add(amount);
         if (balance.compareTo(promiseBoundary) >= 0){
             balance = balance.subtract(promiseBoundary);
-            this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(owner.uuid()));
+            this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(grandchild.uuid()));
         }
         logger.info("Promise Balance increased: {}", balance);
         return this;
     }
 
-    public OwnerId getOwner() {
-        return owner;
+    public GrandchildId getGrandchild() {
+        return grandchild;
     }
 
     @Override
     public String toString() {
         return "Savings{" +
-                "owner=" + owner +
+                "grandchild=" + grandchild +
                 ", balance=" + balance +
                 '}';
     }
 
-    public BigDecimal getBalance() {
+    public Money getBalance() {
         return balance;
     }
 
-    public BigDecimal getPromiseBoundary() {
+    public Money getPromiseBoundary() {
         return promiseBoundary;
     }
 
