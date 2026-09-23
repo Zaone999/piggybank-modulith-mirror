@@ -1,27 +1,31 @@
 package be.kdg.piggybankmodulith.grandparents.adapter.out;
 
 import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "savings_projection", schema = "kdg_grandparents")
-public class SavingsProjectionJpaEntity {
+@Table(name = "savings_promise", schema = "kdg_grandparents")
+public class SavingsPromiseJpaEntity {
 
     @Id
     private UUID owner;
 
     @Column(nullable = false, precision = 19, scale = 2)
+    private BigDecimal promise;
+
+
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
 
-    public SavingsProjectionJpaEntity() {
+    public SavingsPromiseJpaEntity() {
     }
 
-    public SavingsProjectionJpaEntity(UUID owner, BigDecimal balance) {
+    public SavingsPromiseJpaEntity(UUID owner, BigDecimal balance, BigDecimal promise) {
         this.owner = owner;
         this.balance = balance;
+        this.promise = promise;
     }
 
     public UUID getOwner() {
@@ -36,7 +40,8 @@ public class SavingsProjectionJpaEntity {
         return balance;
     }
 
-    public void setBalance(BigDecimal balance) {
-        this.balance = balance;
+    public BigDecimal getPromise() {
+        return promise;
     }
+
 }

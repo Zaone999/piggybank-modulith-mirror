@@ -1,23 +1,19 @@
 package be.kdg.piggybankmodulith.grandparents.core;
 
 import be.kdg.piggybankmodulith.grandparents.domain.SavingsPromise;
-import be.kdg.piggybankmodulith.grandparents.port.in.SavingsDecreaseProjectionCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.SavingsBalanceChangedProjector;
+import be.kdg.piggybankmodulith.grandparents.port.in.SavingsDecreaseProjectionCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.SavingsIncreaseProjectionCommand;
 import be.kdg.piggybankmodulith.grandparents.port.out.LoadSavingsPromisePort;
 import be.kdg.piggybankmodulith.grandparents.port.out.UpdateSavingsPromisePort;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 public class SavingsBalanceChangedProjectorImpl implements SavingsBalanceChangedProjector {
 
-    private final Logger logger = LoggerFactory.getLogger(SavingsBalanceChangedProjectorImpl.class);
     private final LoadSavingsPromisePort loadSavingsPromisePort;
     private final List<UpdateSavingsPromisePort> updateSavingsPromisePorts;
 
@@ -30,24 +26,22 @@ public class SavingsBalanceChangedProjectorImpl implements SavingsBalanceChanged
     @Transactional
     public void project(SavingsDecreaseProjectionCommand projectionCommand) {
         SavingsPromise savingsPromise = loadSavingsPromisePort.loadBy(projectionCommand.owner())
-                .orElse(new SavingsPromise(projectionCommand.owner(), BigDecimal.ZERO));
+                .orElse(SavingsPromise.promise(projectionCommand.owner()));
 
         savingsPromise.decreaseBalance(projectionCommand.amount());
-        updateSavingsPromisePorts.forEach(updateSavingsPromisePort -> {
-            updateSavingsPromisePort.update(savingsPromise);
-        });
+        updateSavingsPromisePorts.forEach(updateSavingsPromisePort ->
+                updateSavingsPromisePort.update(savingsPromise));
+        savingsPromise.clearDomainEvents();
     }
 
     @Override
     @Transactional
     public void project(SavingsIncreaseProjectionCommand projectionCommand) {
         SavingsPromise savingsPromise = loadSavingsPromisePort.loadBy(projectionCommand.owner())
-                .orElse(new SavingsPromise(projectionCommand.owner(), BigDecimal.ZERO));
+                .orElse(SavingsPromise.promise(projectionCommand.owner()));
 
         savingsPromise.increaseBalance(projectionCommand.amount());
-        updateSavingsPromisePorts.forEach(updateSavingsPromisePort -> {
-            updateSavingsPromisePort.update(savingsPromise);
-        });
-        savingsPromise.getDomainEvents().clear();
+        updateSavingsPromisePorts.forEach(updateSavingsPromisePort -> updateSavingsPromisePort.update(savingsPromise));
+        savingsPromise.clearDomainEvents();
     }
 }

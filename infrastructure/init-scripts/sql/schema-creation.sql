@@ -15,7 +15,8 @@ CREATE TABLE kdg_family.piggybank (
 
 
 
-CREATE TABLE kdg_grandparents.savings_projection (
+CREATE TABLE kdg_grandparents.savings_promise (
                                       owner UUID PRIMARY KEY,
-                                      balance NUMERIC(19, 2) NOT NULL
+                                      balance NUMERIC(19, 2) NOT NULL,
+                                      promise NUMERIC(19, 2) NOT NULL
 );

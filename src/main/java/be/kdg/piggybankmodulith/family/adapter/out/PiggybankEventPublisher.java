@@ -3,7 +3,6 @@ package be.kdg.piggybankmodulith.family.adapter.out;
 import be.kdg.piggybankmodulith.family.domain.Piggybank;
 import be.kdg.piggybankmodulith.family.port.out.UpdatePiggybankPort;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +17,7 @@ public class PiggybankEventPublisher implements UpdatePiggybankPort {
     @Override
     public Piggybank update(Piggybank piggybank) {
         piggybank.getDomainEvents().forEach(applicationEventPublisher::publishEvent);
-        piggybank.getDomainEvents().clear();
+        piggybank.clearDomainEvents();
         return piggybank;
     }
 }

@@ -10,8 +10,8 @@ import java.util.List;
 
 public class Piggybank {
 
-    private PiggybankId piggybankId;
-    private OwnerId owner;
+    private final PiggybankId piggybankId;
+    private final OwnerId owner;
     private BigDecimal balance;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
@@ -67,6 +67,10 @@ public class Piggybank {
     }
 
     public List<DomainEvent> getDomainEvents() {
-        return domainEvents;
+        return List.copyOf(domainEvents);
+    }
+
+    public void clearDomainEvents() {
+        domainEvents.clear();
     }
 }

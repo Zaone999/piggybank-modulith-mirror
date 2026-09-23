@@ -17,7 +17,7 @@ public class SavingsPromiseEventPublisher implements UpdateSavingsPromisePort {
     @Override
     public SavingsPromise update(SavingsPromise savingsPromise) {
         savingsPromise.getDomainEvents().forEach(applicationEventPublisher::publishEvent);
-        savingsPromise.getDomainEvents().clear();
+        savingsPromise.clearDomainEvents();
         return savingsPromise;
     }
 }
