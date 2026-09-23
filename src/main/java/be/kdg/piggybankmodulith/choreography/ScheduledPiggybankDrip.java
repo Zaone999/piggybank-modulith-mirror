@@ -1,4 +1,4 @@
-package be.kdg.piggybankmodulith.family;
+package be.kdg.piggybankmodulith.choreography;
 
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
