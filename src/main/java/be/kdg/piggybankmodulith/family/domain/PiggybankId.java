@@ -14,7 +14,7 @@ public record PiggybankId(UUID uuid) {
         return new PiggybankId(UUID.randomUUID());
     }
 
-    public static PiggyBankNotFoundException notFoundForOwner(OwnerId owner) {
+    public static PiggyBankNotFoundException notFoundForOwner(GrandchildId owner) {
         return new PiggyBankNotFoundException(String.format("Piggybank not found for owner %s", owner.uuid().toString()));
     }
 }
