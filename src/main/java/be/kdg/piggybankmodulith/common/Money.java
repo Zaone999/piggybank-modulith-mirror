@@ -11,11 +11,6 @@ public record Money(BigDecimal value) {
 
     public Money {
         Objects.requireNonNull(value, "Amount must not be null");
-
-        if (value.signum() < 0) {
-            throw new IllegalArgumentException("Amount must not be negative");
-        }
-
         value = value.stripTrailingZeros();
     }
 

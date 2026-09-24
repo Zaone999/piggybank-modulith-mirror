@@ -25,6 +25,10 @@ public class Piggybank {
     }
 
     public Piggybank(PiggybankId piggybankId, GrandchildId owner, Money balance) {
+        if (balance.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Starting balance must not be negative");
+        }
+
         this.piggybankId = piggybankId;
         this.owner = owner;
         this.balance = balance;
@@ -39,12 +43,20 @@ public class Piggybank {
     }
 
     public void deposit(Money amount) {
+        if (amount.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Deposit amount must not be negative");
+        }
+
         this.balance = this.balance.add(amount);
         this.domainEvents.add(new MoneyDepositedEvent(owner.uuid(), amount));
         LOGGER.info("Deposit to piggybank, current balance: {}", balance);
     }
 
     public void withdraw(Money amount) {
+        if (amount.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Withdrawal amount must not be negative");
+        }
+
         if (balance.isLessThan(amount)) {
             throw new IllegalStateException("Cannot take money out");//this can be a better exception similar to the rest
         }

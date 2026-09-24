@@ -24,23 +24,46 @@ public class SavingsPromise {
     }
 
     private SavingsPromise(GrandchildId grandchildId, Money balance, Money promiseBoundary) {
+        if (balance.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Starting savings balance must not be negative");
+        }
+
+        if (promiseBoundary.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Promise boundary must not be negative");
+        }
+
         this.grandchildId = grandchildId;
         this.balance = balance;
         this.promiseBoundary = promiseBoundary;
     }
 
     public SavingsPromise decreaseBalance(Money amount) {
+        if (amount.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Balance decrease must not be negative");
+        }
+
+        if (balance.isLessThan(amount)) {
+            throw new IllegalStateException("Savings balance must not become negative");
+        }
+
         this.balance = balance.subtract(amount);
+
         logger.info("Promise Balance decreased: {}", balance);
         return this;
     }
 
     public SavingsPromise increaseBalance(Money amount) {
+        if (amount.isLessThan(Money.ZERO)) {
+            throw new IllegalArgumentException("Balance increase must not be negative");
+        }
+
         this.balance = balance.add(amount);
-        if (balance.compareTo(promiseBoundary) >= 0){
+
+        if (balance.compareTo(promiseBoundary) >= 0) {
             balance = balance.subtract(promiseBoundary);
             this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(grandchildId.uuid()));
         }
+
         logger.info("Promise Balance increased: {}", balance);
         return this;
     }
