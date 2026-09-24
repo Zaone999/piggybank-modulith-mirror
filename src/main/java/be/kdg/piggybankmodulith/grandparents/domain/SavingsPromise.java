@@ -3,7 +3,6 @@ package be.kdg.piggybankmodulith.grandparents.domain;
 import be.kdg.piggybankmodulith.common.Money;
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
-import be.kdg.piggybankmodulith.family.domain.GrandchildId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,18 +14,18 @@ public class SavingsPromise {
 
     private static final Logger logger = LoggerFactory.getLogger(SavingsPromise.class);
 
-    private final GrandchildId grandchildId;
+    private final GrandChildId grandchildId;
     private Money balance;
     private final Money promiseBoundary;
     private boolean triggered;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
-    public static SavingsPromise promise(GrandchildId grandchildId,  Money promiseBoundary) {
+    public static SavingsPromise promise(GrandChildId grandchildId,  Money promiseBoundary) {
         return new SavingsPromise(grandchildId, Money.ZERO, promiseBoundary);
     }
 
-    private SavingsPromise(GrandchildId grandchildId, Money balance, Money promiseBoundary) {
+    private SavingsPromise(GrandChildId grandchildId, Money balance, Money promiseBoundary) {
         if (balance.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Starting savings balance must not be negative");
         }
@@ -85,7 +84,7 @@ public class SavingsPromise {
         return !triggered;
     }
 
-    public GrandchildId getGrandchild() {
+    public GrandChildId getGrandchild() {
         return grandchildId;
     }
 
