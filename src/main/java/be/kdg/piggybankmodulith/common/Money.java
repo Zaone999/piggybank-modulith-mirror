@@ -29,4 +29,8 @@ public record Money(BigDecimal value) {
     public boolean isLessThan(Money other) {
         return compareTo(other) < 0;
     }
+
+    public boolean isLargerThan(Money other) {
+        return compareTo(other) > 0;
+    }
 }

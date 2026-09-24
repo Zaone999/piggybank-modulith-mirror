@@ -60,7 +60,7 @@ public class SavingsPromise {
 
         this.balance = balance.add(amount);
 
-        if (balance.compareTo(promiseBoundary) >= 0) {
+        if (balance.isLargerThan(promiseBoundary)) {
             balance = balance.subtract(promiseBoundary);
             this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(grandchildId.uuid()));
         }
