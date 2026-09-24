@@ -33,4 +33,8 @@ public record Money(BigDecimal value) {
     public boolean isLargerThan(Money other) {
         return compareTo(other) > 0;
     }
+
+    public boolean isAtLeast(Money other) {
+        return compareTo(other) >= 0;
+    }
 }

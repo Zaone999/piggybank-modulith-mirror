@@ -17,6 +17,7 @@ public class SavingsPromise {
     private final GrandchildId grandchildId;
     private Money balance;
     private final Money promiseBoundary;
+    private boolean triggered;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
@@ -38,7 +39,11 @@ public class SavingsPromise {
         this.promiseBoundary = promiseBoundary;
     }
 
-    public SavingsPromise decreaseBalance(Money amount) {
+    public void decreaseBalance(Money amount) {
+        if (triggered) {
+            return;
+        }
+
         if (amount.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Balance decrease must not be negative");
         }
@@ -50,23 +55,25 @@ public class SavingsPromise {
         this.balance = balance.subtract(amount);
 
         logger.info("Promise Balance decreased: {}", balance);
-        return this;
     }
 
-    public SavingsPromise increaseBalance(Money amount) {
+    public void increaseBalance(Money amount) {
+        if (triggered) {
+            return;
+        }
+
         if (amount.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Balance increase must not be negative");
         }
 
         this.balance = balance.add(amount);
 
-        if (balance.isLargerThan(promiseBoundary)) {
-            balance = balance.subtract(promiseBoundary);
+        if (balance.isAtLeast(promiseBoundary)) {
+            triggered = true;
             this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(grandchildId.uuid()));
         }
 
         logger.info("Promise Balance increased: {}", balance);
-        return this;
     }
 
 
