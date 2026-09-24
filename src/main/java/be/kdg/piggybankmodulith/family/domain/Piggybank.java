@@ -42,6 +42,10 @@ public class Piggybank {
         return this.owner.equals(owner);
     }
 
+    public PiggybankId getPiggybankId() {
+        return piggybankId;
+    }
+
     public void deposit(Money amount) {
         if (amount.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Deposit amount must not be negative");

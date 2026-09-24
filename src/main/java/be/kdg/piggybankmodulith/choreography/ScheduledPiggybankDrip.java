@@ -30,7 +30,7 @@ public class ScheduledPiggybankDrip {
         this.grandparentsApi.createSavingsPromise(BOBBY_ID, Money.FIFTY);
     }
 
-    @Scheduled(fixedRate = 10_000)
+    @Scheduled(fixedRate = 2_500)
     void topUp() {
         this.familyApi.deposit(BOBBY_ID, Money.TEN);
     }
