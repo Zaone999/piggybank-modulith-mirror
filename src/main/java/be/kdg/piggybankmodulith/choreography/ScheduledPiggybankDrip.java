@@ -10,12 +10,14 @@ import be.kdg.piggybankmodulith.family.domain.Piggybank;
 import be.kdg.piggybankmodulith.grandparents.domain.SavingsPromise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@ConditionalOnBooleanProperty(name = "piggybank.drip-enabled")
 public class ScheduledPiggybankDrip {
 
 
