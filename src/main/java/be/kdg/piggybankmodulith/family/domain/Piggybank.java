@@ -45,9 +45,10 @@ public class Piggybank {
     }
 
     public void withdraw(Money amount) {
-        if (balance.subtract(amount).compareTo(Money.ZERO) < 0) {
+        if (balance.isLessThan(amount)) {
             throw new IllegalStateException("Cannot take money out");//this can be a better exception similar to the rest
         }
+
         this.balance = this.balance.subtract(amount);
         this.domainEvents.add(new MoneyWithdrawalEvent(owner.uuid(), amount));
         LOGGER.info("Withdrawal from piggybank, current balance: {}", balance);

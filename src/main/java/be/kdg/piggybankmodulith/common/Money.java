@@ -39,6 +39,10 @@ public class Money {
         return value.compareTo(other.value);
     }
 
+    public boolean isLessThan(Money other) {
+        return compareTo(other) < 0;
+    }
+
 
     @Override
     public String toString() {
