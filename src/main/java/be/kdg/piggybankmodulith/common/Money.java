@@ -1,30 +1,23 @@
 package be.kdg.piggybankmodulith.common;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
-
-/**
- * This is a simple example, there exists a MONEY API in java (
- *
- *
- */
-public class Money {
-
-    private final BigDecimal value;
-
+public record Money(BigDecimal value) {
 
     public static final Money ZERO = new Money(BigDecimal.ZERO);
     public static final Money TEN = new Money(BigDecimal.TEN);
     public static final Money FIFTY = new Money(BigDecimal.valueOf(50L));
 
-    private Money(BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) < 0L) {
-            throw new IllegalArgumentException("Amount must be positive");
+    public Money {
+        Objects.requireNonNull(value, "Amount must not be null");
+
+        if (value.signum() < 0) {
+            throw new IllegalArgumentException("Amount must not be negative");
         }
 
-        this.value = amount;
+        value = value.stripTrailingZeros();
     }
-
 
     public Money subtract(Money subtrahend) {
         return new Money(value.subtract(subtrahend.value));
@@ -34,20 +27,11 @@ public class Money {
         return new Money(value.add(augend.value));
     }
 
-
     public int compareTo(Money other) {
         return value.compareTo(other.value);
     }
 
     public boolean isLessThan(Money other) {
         return compareTo(other) < 0;
-    }
-
-
-    @Override
-    public String toString() {
-        return "Money{" +
-                "value=" + value +
-                '}';
     }
 }
