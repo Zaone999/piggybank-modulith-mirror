@@ -37,4 +37,9 @@ public record Money(BigDecimal value) {
     public boolean isAtLeast(Money other) {
         return compareTo(other) >= 0;
     }
+
+    @Override
+    public String toString() {
+        return value.toPlainString();
+    }
 }
