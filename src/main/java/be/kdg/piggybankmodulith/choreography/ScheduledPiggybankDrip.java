@@ -20,12 +20,10 @@ import java.util.List;
 @ConditionalOnBooleanProperty(name = "piggybank.drip-enabled")
 public class ScheduledPiggybankDrip {
 
-
     private static final Logger logger = LoggerFactory.getLogger(ScheduledPiggybankDrip.class);
 
     private final List<Piggybank> piggybanks = List.of(Piggybank.createForOwner(GrandchildId.BOBBY));
     private final List<SavingsPromise> savingsPromises = List.of(SavingsPromise.promise(GrandchildId.of(GrandchildId.BOBBY.uuid()), Money.FIFTY));
-
 
     @Scheduled(fixedRate = 10_000)
     void topUp() {
@@ -39,12 +37,9 @@ public class ScheduledPiggybankDrip {
         for (DomainEvent event : events) {
             switch (event) {
                 case MoneyDepositedEvent moneyDepositedEvent -> handleMoneyDeposited(moneyDepositedEvent);
-
                 case MoneyWithdrawalEvent moneyWithdrawalEvent -> handleMoneyWithdrawal(moneyWithdrawalEvent);
-
                 case PromiseLimitBoundaryReachedEvent promiseLimitBoundaryReachedEvent ->
                         handlePromiseLimitBoundaryReached(promiseLimitBoundaryReachedEvent);
-
                 default -> logger.warn("Unhandled domain event: {}", event.getClass().getSimpleName());
             }
         }
