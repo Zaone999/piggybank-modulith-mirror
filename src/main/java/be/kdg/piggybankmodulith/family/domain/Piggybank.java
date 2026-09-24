@@ -38,8 +38,8 @@ public class Piggybank {
         return new Piggybank(owner, Money.ZERO);
     }
 
-    public GrandchildId getOwner() {
-        return owner;
+    public boolean isOwnedBy(GrandchildId owner) {
+        return this.owner.equals(owner);
     }
 
     public void deposit(Money amount) {

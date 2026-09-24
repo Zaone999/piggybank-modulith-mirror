@@ -27,10 +27,14 @@ public class ScheduledPiggybankDrip {
 
     @Scheduled(fixedRate = 10_000)
     void topUp() {
-        Piggybank piggybank = piggybanks.stream().filter(pb -> pb.getOwner().equals(GrandchildId.BOBBY)).findFirst().orElseThrow();
-        piggybank.deposit(Money.TEN);
-        handleEvents(piggybank.getDomainEvents());
-        piggybank.clearDomainEvents();
+        piggybanks.stream()
+                .filter(pb -> pb.isOwnedBy(GrandchildId.BOBBY))
+                .findFirst()
+                .ifPresent(piggybank -> {
+                    piggybank.deposit(Money.TEN);
+                    handleEvents(piggybank.getDomainEvents());
+                    piggybank.clearDomainEvents();
+                });
     }
 
     private void handleEvents(List<DomainEvent> events) {
@@ -38,8 +42,7 @@ public class ScheduledPiggybankDrip {
             switch (event) {
                 case MoneyDepositedEvent moneyDepositedEvent -> handleMoneyDeposited(moneyDepositedEvent);
                 case MoneyWithdrawalEvent moneyWithdrawalEvent -> handleMoneyWithdrawal(moneyWithdrawalEvent);
-                case PromiseLimitBoundaryReachedEvent promiseLimitBoundaryReachedEvent ->
-                        handlePromiseLimitBoundaryReached(promiseLimitBoundaryReachedEvent);
+                case PromiseLimitBoundaryReachedEvent promiseLimitBoundaryReachedEvent -> handlePromiseLimitBoundaryReached(promiseLimitBoundaryReachedEvent);
                 default -> logger.warn("Unhandled domain event: {}", event.getClass().getSimpleName());
             }
         }
