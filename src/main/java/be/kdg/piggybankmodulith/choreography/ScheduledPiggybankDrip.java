@@ -46,17 +46,29 @@ public class ScheduledPiggybankDrip {
     }
 
     private void handleMoneyDeposited(MoneyDepositedEvent moneyDepositedEvent) {
-        SavingsPromise promise = savingsPromises.stream().filter(sp -> sp.getGrandchild().uuid().equals(GrandchildId.BOBBY.uuid())).findFirst().orElseThrow();
-        promise.increaseBalance(moneyDepositedEvent.amount());
-        handleEvents(promise.getDomainEvents());
-        promise.clearDomainEvents();
+        savingsPromises.stream()
+                .filter(sp -> sp.isMadeTo(moneyDepositedEvent.owner()))
+                .filter(SavingsPromise::notYetTriggered)
+                .findFirst()
+                .ifPresent(promise -> {
+                    promise.increaseBalance(moneyDepositedEvent.amount());
+
+                    handleEvents(promise.getDomainEvents());
+                    promise.clearDomainEvents();
+                });
     }
 
     private void handleMoneyWithdrawal(MoneyWithdrawalEvent moneyWithdrawalEvent) {
-        SavingsPromise promise =  savingsPromises.stream().filter(sp -> sp.getGrandchild().uuid().equals(GrandchildId.BOBBY.uuid())).findFirst().orElseThrow();
-        promise.decreaseBalance(moneyWithdrawalEvent.amount());
-        handleEvents(promise.getDomainEvents());
-        promise.clearDomainEvents();
+        savingsPromises.stream()
+                .filter(sp -> sp.isMadeTo(moneyWithdrawalEvent.owner()))
+                .filter(SavingsPromise::notYetTriggered)
+                .findFirst()
+                .ifPresent(promise -> {
+                    promise.decreaseBalance(moneyWithdrawalEvent.amount());
+
+                    handleEvents(promise.getDomainEvents());
+                    promise.clearDomainEvents();
+                });
     }
 
     private void handlePromiseLimitBoundaryReached(PromiseLimitBoundaryReachedEvent event) {

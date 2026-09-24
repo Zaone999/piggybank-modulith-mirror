@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class SavingsPromise {
 
@@ -76,6 +77,13 @@ public class SavingsPromise {
         logger.info("Promise Balance increased: {}", balance);
     }
 
+    public boolean isMadeTo(UUID grandchildId) {
+        return this.grandchildId.uuid().equals(grandchildId);
+    }
+
+    public boolean notYetTriggered() {
+        return !triggered;
+    }
 
     public GrandchildId getGrandchild() {
         return grandchildId;
