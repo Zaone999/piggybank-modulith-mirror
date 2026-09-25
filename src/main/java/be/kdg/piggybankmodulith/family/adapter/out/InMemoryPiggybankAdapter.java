@@ -9,6 +9,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -23,6 +24,11 @@ class InMemoryPiggybankAdapter implements PiggybankLoadPort, PiggybankUpdatePort
         return piggybanks.values().stream()
                 .filter(pb -> pb.isOwnedBy(ownerId))
                 .findFirst();
+    }
+
+    @Override
+    public List<Piggybank> loadAll() {
+        return List.copyOf(piggybanks.values());
     }
 
     @Override

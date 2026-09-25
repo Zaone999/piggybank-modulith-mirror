@@ -46,6 +46,14 @@ public class Piggybank {
         return piggybankId;
     }
 
+    public GrandchildId getOwner() {
+        return owner;
+    }
+
+    public Money getBalance() {
+        return balance;
+    }
+
     public void deposit(Money amount) {
         if (amount.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Deposit amount must not be negative");
