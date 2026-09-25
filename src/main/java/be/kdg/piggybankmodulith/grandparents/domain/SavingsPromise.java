@@ -3,7 +3,7 @@ package be.kdg.piggybankmodulith.grandparents.domain;
 import be.kdg.piggybankmodulith.common.Money;
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
-import be.kdg.piggybankmodulith.family.domain.GrandchildId;
+import be.kdg.piggybankmodulith.family.domain.OwnerId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,18 +15,18 @@ public class SavingsPromise {
 
     private static final Logger logger = LoggerFactory.getLogger(SavingsPromise.class);
 
-    private final GrandchildId grandchildId;
+    private final OwnerId ownerId;
     private Money balance;
     private final Money promiseBoundary;
     private boolean triggered;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
-    public static SavingsPromise promise(GrandchildId grandchildId,  Money promiseBoundary) {
-        return new SavingsPromise(grandchildId, Money.ZERO, promiseBoundary);
+    public static SavingsPromise promise(OwnerId ownerId, Money promiseBoundary) {
+        return new SavingsPromise(ownerId, Money.ZERO, promiseBoundary);
     }
 
-    private SavingsPromise(GrandchildId grandchildId, Money balance, Money promiseBoundary) {
+    private SavingsPromise(OwnerId ownerId, Money balance, Money promiseBoundary) {
         if (balance.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Starting savings balance must not be negative");
         }
@@ -35,7 +35,7 @@ public class SavingsPromise {
             throw new IllegalArgumentException("Promise boundary must not be negative");
         }
 
-        this.grandchildId = grandchildId;
+        this.ownerId = ownerId;
         this.balance = balance;
         this.promiseBoundary = promiseBoundary;
     }
@@ -71,22 +71,22 @@ public class SavingsPromise {
 
         if (balance.isAtLeast(promiseBoundary)) {
             triggered = true;
-            this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(grandchildId.uuid()));
+            this.domainEvents.add(new PromiseLimitBoundaryReachedEvent(ownerId.uuid()));
         }
 
         logger.info("Promise Balance increased: {}", balance);
     }
 
     public boolean isMadeTo(UUID grandchildId) {
-        return this.grandchildId.uuid().equals(grandchildId);
+        return this.ownerId.uuid().equals(grandchildId);
     }
 
     public boolean notYetTriggered() {
         return !triggered;
     }
 
-    public GrandchildId getGrandchild() {
-        return grandchildId;
+    public OwnerId getGrandchild() {
+        return ownerId;
     }
 
     public List<DomainEvent> getDomainEvents() {
@@ -100,7 +100,7 @@ public class SavingsPromise {
     @Override
     public String toString() {
         return "Savings{" +
-                "grandchildId=" + grandchildId +
+                "grandchildId=" + ownerId +
                 ", balance=" + balance +
                 '}';
     }

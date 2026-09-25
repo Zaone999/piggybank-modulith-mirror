@@ -13,18 +13,18 @@ import java.util.List;
 public class Piggybank {
 
     private final PiggybankId piggybankId;
-    private final GrandchildId owner;
+    private final OwnerId owner;
     private Money balance;
 
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Piggybank.class);
 
-    public Piggybank(GrandchildId owner, Money balance) {
+    public Piggybank(OwnerId owner, Money balance) {
         this(PiggybankId.create(), owner, balance);
     }
 
-    public Piggybank(PiggybankId piggybankId, GrandchildId owner, Money balance) {
+    public Piggybank(PiggybankId piggybankId, OwnerId owner, Money balance) {
         if (balance.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Starting balance must not be negative");
         }
@@ -34,11 +34,11 @@ public class Piggybank {
         this.balance = balance;
     }
 
-    public static Piggybank createForOwner(GrandchildId owner) {
+    public static Piggybank createForOwner(OwnerId owner) {
         return new Piggybank(owner, Money.ZERO);
     }
 
-    public boolean isOwnedBy(GrandchildId owner) {
+    public boolean isOwnedBy(OwnerId owner) {
         return this.owner.equals(owner);
     }
 

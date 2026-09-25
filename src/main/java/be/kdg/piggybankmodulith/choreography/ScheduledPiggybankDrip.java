@@ -5,7 +5,7 @@ import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
-import be.kdg.piggybankmodulith.family.domain.GrandchildId;
+import be.kdg.piggybankmodulith.family.domain.OwnerId;
 import be.kdg.piggybankmodulith.family.domain.Piggybank;
 import be.kdg.piggybankmodulith.grandparents.domain.SavingsPromise;
 import org.slf4j.Logger;
@@ -22,13 +22,13 @@ public class ScheduledPiggybankDrip {
 
     private static final Logger logger = LoggerFactory.getLogger(ScheduledPiggybankDrip.class);
 
-    private final List<Piggybank> piggybanks = List.of(Piggybank.createForOwner(GrandchildId.BOBBY));
-    private final List<SavingsPromise> savingsPromises = List.of(SavingsPromise.promise(GrandchildId.of(GrandchildId.BOBBY.uuid()), Money.FIFTY));
+    private final List<Piggybank> piggybanks = List.of(Piggybank.createForOwner(OwnerId.BOBBY));
+    private final List<SavingsPromise> savingsPromises = List.of(SavingsPromise.promise(OwnerId.of(OwnerId.BOBBY.uuid()), Money.FIFTY));
 
     @Scheduled(fixedRate = 10_000)
     void topUp() {
         piggybanks.stream()
-                .filter(pb -> pb.isOwnedBy(GrandchildId.BOBBY))
+                .filter(pb -> pb.isOwnedBy(OwnerId.BOBBY))
                 .findFirst()
                 .ifPresent(piggybank -> {
                     piggybank.deposit(Money.TEN);
