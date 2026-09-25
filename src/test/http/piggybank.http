@@ -1,12 +1,26 @@
-# Optional extension from the Hexagonal Architecture slides.
-# Add PiggybankController and DepositRequest before running this request.
-# The current branch uses FamilyApiAdapter and the scheduler, with no HTTP controller.
-# With piggybank.drip-enabled=true, the scheduler creates Bobby's piggybank at startup.
+# For manual deposits only, start with --piggybank.drip-enabled=false.
+# Otherwise, the scheduler also creates and tops up Bobby's separate piggybank.
+# Deposits address the ownerId, as in FamilyApi and DepositMoneyCommand.
 
-### Deposit money for Bobby
-POST http://localhost:8080/piggybanks/8c8c87c1-9b5f-4f73-9fa7-7f9b5c7f2296/deposits
+@baseUrl = http://localhost:8080
+@ownerId = 4b3fa27a-5839-40dd-a05a-a62c71e610d7
+
+### Create a piggybank (201; repeating this request returns 409)
+POST {{baseUrl}}/piggybanks
+Content-Type: application/json
+
+{
+  "ownerId": "{{ownerId}}"
+}
+
+### Deposit money (200 with the updated balance)
+POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
 Content-Type: application/json
 
 {
   "amount": 10
 }
+
+### List all piggybanks with their owner and balance
+GET {{baseUrl}}/piggybanks
+Accept: application/json
