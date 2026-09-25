@@ -2,7 +2,7 @@ package be.kdg.piggybankmodulith.family.core;
 
 import be.kdg.piggybankmodulith.family.domain.GrandchildId;
 import be.kdg.piggybankmodulith.family.domain.Piggybank;
-import be.kdg.piggybankmodulith.family.domain.PiggybankId;
+import be.kdg.piggybankmodulith.family.domain.exceptions.PiggyBankNotFoundException;
 import be.kdg.piggybankmodulith.family.port.in.DepositMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.DepositUseCase;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankLoadPort;
@@ -28,7 +28,8 @@ class DefaultDepositUseCase implements DepositUseCase {
     public Piggybank deposit(DepositMoneyCommand command) {
         GrandchildId ownerId = GrandchildId.of(command.ownerId());
         Piggybank piggybank = piggybankLoadPort.loadByOwnerId(ownerId)
-                .orElseThrow(() -> PiggybankId.notFoundForOwner(ownerId));
+                .orElseThrow(() -> new PiggyBankNotFoundException(
+                        "Piggybank not found for owner " + ownerId.uuid()));
 
         piggybank.deposit(command.amount());
 
