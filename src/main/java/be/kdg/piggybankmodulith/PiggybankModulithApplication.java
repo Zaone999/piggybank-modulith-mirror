@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class PiggybankModulithApplication {
 
     static void main(String[] args) {
-        var modules = ApplicationModules.of(PiggybankModulithApplication.class);
+        ApplicationModules modules = ApplicationModules.of(PiggybankModulithApplication.class);
         modules.forEach(module ->
                 System.out.println("Discovered module: " + module.getIdentifier()));
 
