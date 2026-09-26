@@ -3,7 +3,7 @@
 # Deposits address the ownerId, as in FamilyApi and DepositMoneyCommand.
 
 @baseUrl = http://localhost:8080
-@ownerId = 4b3fa27a-5839-40dd-a05a-a62c71e610d7
+@ownerId = 8c8c87c1-9b5f-4f73-9fa7-7f9b5c7f2296
 
 ### Create a piggybank (201)
 POST {{baseUrl}}/piggybanks
