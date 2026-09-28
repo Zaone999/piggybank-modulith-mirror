@@ -34,12 +34,12 @@ class PiggybankPersistenceAdapter implements PiggybankLoadPort, PiggybankUpdateP
     @Override
     public Optional<Piggybank> loadByOwnerId(GrandchildId ownerId, EntryWindow window) {
         if (window.isAll()) {
-            List<PiggybankEventJpaEntity> history = repository.findByOwnerOrderByVersionAsc(ownerId.uuid());
+            List<PiggybankEventJpaEntity> history = repository.findByOwnerOrderByPointInTimeAsc(ownerId.uuid());
             return history.isEmpty() ? Optional.empty() : Optional.of(replay(history));
         }
 
         // only read the events in the window; the created event tells whether the piggybank exists at all
-        return repository.findByOwnerAndVersion(ownerId.uuid(), 1)
+        return repository.findByOwnerAndType(ownerId.uuid(), PiggybankEventType.CREATED)
                 .map(created -> Piggybank.replay(
                         PiggybankId.of(created.getPiggybankId()),
                         ownerId,
@@ -52,7 +52,7 @@ class PiggybankPersistenceAdapter implements PiggybankLoadPort, PiggybankUpdateP
     @Override
     public List<Piggybank> loadAll() {
         Map<UUID, List<PiggybankEventJpaEntity>> historyPerPiggybank = new LinkedHashMap<>();
-        repository.findAllByOrderByPiggybankIdAscVersionAsc().forEach(entity ->
+        repository.findAllByOrderByPiggybankIdAscPointInTimeAsc().forEach(entity ->
                 historyPerPiggybank.computeIfAbsent(entity.getPiggybankId(), id -> new ArrayList<>()).add(entity));
 
         return historyPerPiggybank.values().stream()
@@ -62,12 +62,9 @@ class PiggybankPersistenceAdapter implements PiggybankLoadPort, PiggybankUpdateP
 
     @Override
     public void update(Piggybank piggybank) {
-        int version = piggybank.getEventStore().size();
-        List<PiggybankEventJpaEntity> newEvents = new ArrayList<>();
-        for (DomainEvent event : piggybank.getDomainEvents()) {
-            newEvents.add(toJpaEntity(piggybank, ++version, event));
-        }
-        repository.saveAll(newEvents);
+        repository.saveAll(piggybank.getDomainEvents().stream()
+                .map(event -> toJpaEntity(piggybank, event))
+                .toList());
     }
 
     private Piggybank replay(List<PiggybankEventJpaEntity> history) {
@@ -89,18 +86,18 @@ class PiggybankPersistenceAdapter implements PiggybankLoadPort, PiggybankUpdateP
         };
     }
 
-    private PiggybankEventJpaEntity toJpaEntity(Piggybank piggybank, int version, DomainEvent event) {
+    private PiggybankEventJpaEntity toJpaEntity(Piggybank piggybank, DomainEvent event) {
         UUID piggybankId = piggybank.getPiggybankId().uuid();
         UUID owner = piggybank.getOwner().uuid();
         return switch (event) {
             case PiggybankCreatedEvent created -> new PiggybankEventJpaEntity(
-                    created.eventUUID(), piggybankId, owner, version,
+                    created.eventUUID(), piggybankId, owner,
                     PiggybankEventType.CREATED, null, created.eventPit());
             case MoneyDepositedEvent deposited -> new PiggybankEventJpaEntity(
-                    deposited.eventUUID(), piggybankId, owner, version,
+                    deposited.eventUUID(), piggybankId, owner,
                     PiggybankEventType.DEPOSITED, deposited.amount().value(), deposited.eventPit());
             case MoneyWithdrawalEvent withdrawn -> new PiggybankEventJpaEntity(
-                    withdrawn.eventUUID(), piggybankId, owner, version,
+                    withdrawn.eventUUID(), piggybankId, owner,
                     PiggybankEventType.WITHDRAWN, withdrawn.amount().value(), withdrawn.eventPit());
             default -> throw new IllegalArgumentException("Unknown piggybank event: " + event);
         };

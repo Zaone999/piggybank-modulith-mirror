@@ -18,16 +18,14 @@ CREATE TABLE kdg_family.piggybank_event (
                            event_id      UUID           PRIMARY KEY,
                            piggybank_id  UUID           NOT NULL,
                            owner         UUID           NOT NULL,
-                           version       INTEGER        NOT NULL,
                            type          VARCHAR(20)    NOT NULL,
                            amount        NUMERIC(19, 2),
-                           point_in_time TIMESTAMP      NOT NULL,
-                           UNIQUE (piggybank_id, version)
+                           point_in_time TIMESTAMP      NOT NULL
 );
 
--- one piggybank per owner: only one CREATED event, the first one, per owner
-CREATE UNIQUE INDEX piggybank_event_one_piggybank_per_owner
-    ON kdg_family.piggybank_event (owner) WHERE version = 1;
+-- one piggybank per owner: only one CREATED event per owner
+CREATE UNIQUE INDEX piggybank_event_one_created_per_owner
+    ON kdg_family.piggybank_event (owner) WHERE type = 'CREATED';
 
 
 
