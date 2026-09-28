@@ -13,6 +13,8 @@ public class SavingsPromise {
 
     private static final Logger logger = LoggerFactory.getLogger(SavingsPromise.class);
 
+    public static final Money DEFAULT_PROMISE_BOUNDARY = Money.FIFTY;
+
     private final SavingsPromiseId savingsPromiseId;
     private final GrandChildId grandchildId;
     private Money balance;

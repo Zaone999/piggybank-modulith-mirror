@@ -1,4 +1,4 @@
-package be.kdg.piggybankmodulith.family.adapter.in;
+package be.kdg.piggybankmodulith.family.adapter.in.listeners;
 
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
 import org.slf4j.Logger;
@@ -14,5 +14,6 @@ class SpringApplicationEventListenerAdapter {
     @EventListener
     void handlePromiseLimitBoundaryReachedEvent(PromiseLimitBoundaryReachedEvent event) {
         log.info("PROMISE LIMIT REACHED, LET'S GO SHOPPING");
+        System.exit(0);
     }
 }

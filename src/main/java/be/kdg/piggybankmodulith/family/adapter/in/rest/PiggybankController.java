@@ -1,4 +1,4 @@
-package be.kdg.piggybankmodulith.family.adapter.in;
+package be.kdg.piggybankmodulith.family.adapter.in.rest;
 
 import be.kdg.piggybankmodulith.common.Money;
 import be.kdg.piggybankmodulith.family.domain.Piggybank;
