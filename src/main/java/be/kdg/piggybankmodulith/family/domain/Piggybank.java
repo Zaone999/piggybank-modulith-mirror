@@ -9,14 +9,19 @@ import be.kdg.piggybankmodulith.family.domain.exceptions.InsufficientFundsExcept
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * An event-sourced aggregate: it does not store its balance, it keeps every event that happened to it
  * and replays them to know where it is. Replayed in an {@link EntryWindow}, it only sees the events in
  * that window, and is read-only.
+ * <p>
+ * Snapshotting: the balance of all events before {@code baseSnapshotDate} is kept in {@code baseSnapshotBalance},
+ * so only the events from that date on are replayed.
  */
 public class Piggybank {
 
@@ -30,6 +35,10 @@ public class Piggybank {
     // what happened since: not stored or published yet
     private final List<DomainEvent> uncommittedEvents = new ArrayList<>();
     private final EntryWindow window;
+
+    // the balance of every event before the snapshot date; no snapshot yet: zero, and no date
+    private Money baseSnapshotBalance = Money.ZERO;
+    private LocalDateTime baseSnapshotDate;
 
     private Piggybank(PiggybankId piggybankId, GrandchildId owner, EntryWindow window) {
         this.piggybankId = Objects.requireNonNull(piggybankId, "Piggybank ID must not be null");
@@ -45,6 +54,21 @@ public class Piggybank {
 
     public static Piggybank replay(PiggybankId piggybankId, GrandchildId owner, List<DomainEvent> history) {
         return replay(piggybankId, owner, history, EntryWindow.all());
+    }
+
+    /**
+     * Rebuilds a stored piggybank from its last snapshot and the events from the snapshot date on.
+     */
+    public static Piggybank replayFromSnapshot(PiggybankId piggybankId, GrandchildId owner,
+                                               Money baseSnapshotBalance, LocalDateTime baseSnapshotDate,
+                                               List<DomainEvent> eventsSinceSnapshot) {
+        Piggybank piggybank = new Piggybank(piggybankId, owner, EntryWindow.all());
+        piggybank.baseSnapshotBalance = Objects.requireNonNull(baseSnapshotBalance);
+        piggybank.baseSnapshotDate = Objects.requireNonNull(baseSnapshotDate);
+        eventsSinceSnapshot.stream()
+                .filter(piggybank::isAfterSnapshot)
+                .forEach(piggybank.eventStore::add);
+        return piggybank;
     }
 
     /**
@@ -76,8 +100,47 @@ public class Piggybank {
     }
 
     public Money getBalance() {
-        Money balance = Money.ZERO;
-        for (DomainEvent event : allEvents()) {
+        return balanceOf(baseSnapshotBalance, allEvents());
+    }
+
+    /**
+     * Folds every event before the date into a new baseSnapshotBalance: the old one plus those events.
+     * The events from the date on are still replayed.
+     */
+    public void takeSnapshot(LocalDateTime date) {
+        requireEntireHistory();
+        if (!uncommittedEvents.isEmpty()) {
+            throw new IllegalStateException("Store the uncommitted events before taking a snapshot");
+        }
+        if (baseSnapshotDate != null && !date.isAfter(baseSnapshotDate)) {
+            throw new IllegalArgumentException("A snapshot on " + date + " is not after the last one, on " + baseSnapshotDate);
+        }
+
+        List<DomainEvent> before = eventStore.stream().filter(event -> event.eventPit().isBefore(date)).toList();
+        baseSnapshotBalance = balanceOf(baseSnapshotBalance, before);
+        baseSnapshotDate = date;
+        eventStore.removeAll(before);
+        LOGGER.info("Snapshot of piggybank {} on {}: base balance {}", piggybankId.uuid(), date, baseSnapshotBalance);
+    }
+
+    public Money getBaseSnapshotBalance() {
+        return baseSnapshotBalance;
+    }
+
+    /**
+     * Empty as long as no snapshot was taken.
+     */
+    public Optional<LocalDateTime> getBaseSnapshotDate() {
+        return Optional.ofNullable(baseSnapshotDate);
+    }
+
+    private boolean isAfterSnapshot(DomainEvent event) {
+        return baseSnapshotDate == null || !event.eventPit().isBefore(baseSnapshotDate);
+    }
+
+    private static Money balanceOf(Money start, List<DomainEvent> events) {
+        Money balance = start;
+        for (DomainEvent event : events) {
             balance = switch (event) {
                 case PiggybankCreatedEvent created -> balance;
                 case MoneyDepositedEvent deposited -> balance.add(deposited.amount());
@@ -149,6 +212,8 @@ public class Piggybank {
                 "piggybankId=" + piggybankId +
                 ", owner=" + owner +
                 ", window=" + window +
+                ", baseSnapshotBalance=" + baseSnapshotBalance +
+                ", baseSnapshotDate=" + baseSnapshotDate +
                 ", eventStore=" + eventStore +
                 ", uncommittedEvents=" + uncommittedEvents +
                 '}';

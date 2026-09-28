@@ -10,16 +10,18 @@ import java.util.UUID;
 
 interface PiggybankEventJpaRepository extends JpaRepository<PiggybankEventJpaEntity, UUID> {
 
-    List<PiggybankEventJpaEntity> findByOwnerOrderByVersionAsc(UUID owner);
+    List<PiggybankEventJpaEntity> findByOwnerOrderByPointInTimeAsc(UUID owner);
 
-    List<PiggybankEventJpaEntity> findAllByOrderByPiggybankIdAscVersionAsc();
+    Optional<PiggybankEventJpaEntity> findByOwnerAndType(UUID owner, PiggybankEventType type);
 
-    // the first event of a piggybank: the created event, whatever window is asked for
-    Optional<PiggybankEventJpaEntity> findByOwnerAndVersion(UUID owner, int version);
+    List<PiggybankEventJpaEntity> findByType(PiggybankEventType type);
 
     @Query("""
             select event from PiggybankEventJpaEntity event
             where event.owner = :owner and event.pointInTime >= :start and event.pointInTime < :end
-            order by event.version""")
+            order by event.pointInTime""")
     List<PiggybankEventJpaEntity> findInWindow(UUID owner, LocalDateTime start, LocalDateTime end);
+
+    List<PiggybankEventJpaEntity> findByPiggybankIdAndPointInTimeGreaterThanEqualOrderByPointInTimeAsc(
+            UUID piggybankId, LocalDateTime snapshotDate);
 }

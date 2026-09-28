@@ -139,7 +139,77 @@ class PiggybankTest {
         assertTrue(inWindow.getDomainEvents().isEmpty());
     }
 
+    // the six events of the lesson's snapshot slide: 01/01 to 18/03, balance 20
+    private List<DomainEvent> slideHistory() {
+        return List.of(
+                new PiggybankCreatedEvent(LocalDateTime.of(2026, 1, 1, 9, 0), UUID.randomUUID(), owner.uuid()),
+                deposit(LocalDateTime.of(2026, 1, 1, 10, 0), Money.TEN),
+                deposit(LocalDateTime.of(2026, 1, 20, 10, 0), Money.TEN),
+                withdrawal(LocalDateTime.of(2026, 2, 5, 10, 0), new Money(BigDecimal.valueOf(5))),
+                withdrawal(LocalDateTime.of(2026, 2, 21, 10, 0), Money.TEN),
+                deposit(LocalDateTime.of(2026, 3, 3, 10, 0), Money.TEN.add(Money.TEN)),
+                withdrawal(LocalDateTime.of(2026, 3, 18, 10, 0), new Money(BigDecimal.valueOf(5))));
+    }
+
+    @Test
+    void aSnapshotFoldsTheOlderEventsIntoTheBaseSnapshotBalance() {
+        Piggybank piggybank = Piggybank.replay(PiggybankId.create(), owner, slideHistory());
+        LocalDateTime endOfFebruary = LocalDateTime.of(2026, 3, 1, 0, 0);
+
+        piggybank.takeSnapshot(endOfFebruary);
+
+        assertEquals(new Money(BigDecimal.valueOf(5)), piggybank.getBaseSnapshotBalance());
+        assertEquals(endOfFebruary, piggybank.getBaseSnapshotDate().orElseThrow());
+        assertEquals(2, piggybank.getEventStore().size());
+        assertEquals(new Money(BigDecimal.valueOf(20)), piggybank.getBalance());
+    }
+
+    @Test
+    void replayingFromASnapshotGivesTheSameBalanceAsReplayingEverything() {
+        LocalDateTime endOfFebruary = LocalDateTime.of(2026, 3, 1, 0, 0);
+
+        Piggybank everything = Piggybank.replay(PiggybankId.create(), owner, slideHistory());
+        // the older events are handed over too, but a replay from a snapshot skips them
+        Piggybank fromSnapshot = Piggybank.replayFromSnapshot(PiggybankId.create(), owner,
+                new Money(BigDecimal.valueOf(5)), endOfFebruary, slideHistory());
+
+        assertEquals(everything.getBalance(), fromSnapshot.getBalance());
+        assertEquals(2, fromSnapshot.getEventStore().size());
+    }
+
+    @Test
+    void aNewSnapshotBuildsOnTheOldBaseSnapshotBalance() {
+        Piggybank piggybank = Piggybank.replay(PiggybankId.create(), owner, slideHistory());
+
+        piggybank.takeSnapshot(LocalDateTime.of(2026, 2, 1, 0, 0));
+        assertEquals(Money.TEN.add(Money.TEN), piggybank.getBaseSnapshotBalance());
+        piggybank.takeSnapshot(LocalDateTime.of(2026, 3, 1, 0, 0));
+
+        assertEquals(new Money(BigDecimal.valueOf(5)), piggybank.getBaseSnapshotBalance());
+        assertEquals(new Money(BigDecimal.valueOf(20)), piggybank.getBalance());
+    }
+
+    @Test
+    void aSnapshotMustComeAfterTheLastOne() {
+        Piggybank piggybank = Piggybank.replay(PiggybankId.create(), owner, slideHistory());
+        piggybank.takeSnapshot(LocalDateTime.of(2026, 3, 1, 0, 0));
+
+        assertThrows(IllegalArgumentException.class, () -> piggybank.takeSnapshot(LocalDateTime.of(2026, 2, 1, 0, 0)));
+    }
+
+    @Test
+    void uncommittedEventsAreStoredBeforeASnapshot() {
+        Piggybank piggybank = Piggybank.replay(PiggybankId.create(), owner, slideHistory());
+        piggybank.deposit(Money.TEN);
+
+        assertThrows(IllegalStateException.class, () -> piggybank.takeSnapshot(LocalDateTime.now()));
+    }
+
     private MoneyDepositedEvent deposit(LocalDateTime pointInTime, Money amount) {
         return new MoneyDepositedEvent(pointInTime, UUID.randomUUID(), owner.uuid(), amount);
+    }
+
+    private MoneyWithdrawalEvent withdrawal(LocalDateTime pointInTime, Money amount) {
+        return new MoneyWithdrawalEvent(pointInTime, UUID.randomUUID(), owner.uuid(), amount);
     }
 }

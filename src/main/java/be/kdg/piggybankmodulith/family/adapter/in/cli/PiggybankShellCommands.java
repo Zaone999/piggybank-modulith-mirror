@@ -12,6 +12,8 @@ import be.kdg.piggybankmodulith.family.port.in.ListPiggybanksQuery;
 import be.kdg.piggybankmodulith.family.port.in.PiggybankBalanceQuery;
 import be.kdg.piggybankmodulith.family.port.in.RegisterBirthCommand;
 import be.kdg.piggybankmodulith.family.port.in.RegisterBirthUseCase;
+import be.kdg.piggybankmodulith.family.port.in.TakeSnapshotUseCase;
+import be.kdg.piggybankmodulith.family.port.in.TakeSnapshotsCommand;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawUseCase;
 import org.springframework.shell.core.command.annotation.Command;
@@ -19,6 +21,7 @@ import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -35,6 +38,8 @@ import java.util.stream.Collectors;
  *  piggybanks
  *  balance --owner <owner>
  *  balance --owner <owner> --month 2026-09
+ *  snapshot
+ *  snapshot --date 2026-09-01T00:00
  *  exit
  *
  * or run the same commands from a file with scripts/init-and-deposit.sh (or .bat on Windows)
@@ -50,6 +55,7 @@ public class PiggybankShellCommands {
     private final WithdrawUseCase withdrawUseCase;
     private final ListPiggybanksQuery listPiggybanksQuery;
     private final PiggybankBalanceQuery piggybankBalanceQuery;
+    private final TakeSnapshotUseCase takeSnapshotUseCase;
 
     public PiggybankShellCommands(
             RegisterBirthUseCase registerBirthUseCase,
@@ -57,13 +63,15 @@ public class PiggybankShellCommands {
             DepositUseCase depositUseCase,
             WithdrawUseCase withdrawUseCase,
             ListPiggybanksQuery listPiggybanksQuery,
-            PiggybankBalanceQuery piggybankBalanceQuery) {
+            PiggybankBalanceQuery piggybankBalanceQuery,
+            TakeSnapshotUseCase takeSnapshotUseCase) {
         this.registerBirthUseCase = registerBirthUseCase;
         this.createPiggybankUseCase = createPiggybankUseCase;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
         this.listPiggybanksQuery = listPiggybanksQuery;
         this.piggybankBalanceQuery = piggybankBalanceQuery;
+        this.takeSnapshotUseCase = takeSnapshotUseCase;
     }
 
     @Command(name = "born", description = "Register the birth of a family member")
@@ -120,6 +128,15 @@ public class PiggybankShellCommands {
         YearMonth yearMonth = YearMonth.parse(month);
         return "Balance for " + yearMonth + ": "
                 + piggybankBalanceQuery.balanceForMonth(new BalanceForMonth(ownerId, yearMonth));
+    }
+
+    // what the monthly scheduler does, by hand: without a date, a snapshot of everything up to now
+    @Command(name = "snapshot", description = "Take a snapshot of every piggybank, covering the events before the date")
+    public String snapshot(@Option(longName = "date") String date) {
+        LocalDateTime snapshotDate = date == null ? LocalDateTime.now() : LocalDateTime.parse(date);
+        takeSnapshotUseCase.takeSnapshots(new TakeSnapshotsCommand(snapshotDate));
+
+        return "Snapshots taken on " + snapshotDate;
     }
 
     @Command(name = "exit", description = "Stop the application")
