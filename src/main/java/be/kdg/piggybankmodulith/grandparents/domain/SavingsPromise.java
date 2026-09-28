@@ -8,12 +8,14 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 public class SavingsPromise {
 
     private static final Logger logger = LoggerFactory.getLogger(SavingsPromise.class);
 
+    public static final Money DEFAULT_PROMISE_BOUNDARY = Money.FIFTY;
+
+    private final SavingsPromiseId savingsPromiseId;
     private final GrandChildId grandchildId;
     private Money balance;
     private final Money promiseBoundary;
@@ -22,10 +24,10 @@ public class SavingsPromise {
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
     public static SavingsPromise promise(GrandChildId grandchildId,  Money promiseBoundary) {
-        return new SavingsPromise(grandchildId, Money.ZERO, promiseBoundary);
+        return new SavingsPromise(SavingsPromiseId.create(), grandchildId, Money.ZERO, promiseBoundary);
     }
 
-    private SavingsPromise(GrandChildId grandchildId, Money balance, Money promiseBoundary) {
+    private SavingsPromise(SavingsPromiseId savingsPromiseId, GrandChildId grandchildId, Money balance, Money promiseBoundary) {
         if (balance.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Starting savings balance must not be negative");
         }
@@ -34,6 +36,7 @@ public class SavingsPromise {
             throw new IllegalArgumentException("Promise boundary must not be negative");
         }
 
+        this.savingsPromiseId = savingsPromiseId;
         this.grandchildId = grandchildId;
         this.balance = balance;
         this.promiseBoundary = promiseBoundary;
@@ -76,16 +79,28 @@ public class SavingsPromise {
         logger.info("Promise Balance increased: {}", balance);
     }
 
-    public boolean isMadeTo(UUID grandchildId) {
-        return this.grandchildId.uuid().equals(grandchildId);
+    public boolean isMadeTo(GrandChildId grandchildId) {
+        return this.grandchildId.equals(grandchildId);
     }
 
     public boolean notYetTriggered() {
         return !triggered;
     }
 
+    public SavingsPromiseId getSavingsPromiseId() {
+        return savingsPromiseId;
+    }
+
     public GrandChildId getGrandchild() {
         return grandchildId;
+    }
+
+    public Money getBalance() {
+        return balance;
+    }
+
+    public Money getPromiseBoundary() {
+        return promiseBoundary;
     }
 
     public List<DomainEvent> getDomainEvents() {
@@ -98,8 +113,9 @@ public class SavingsPromise {
 
     @Override
     public String toString() {
-        return "Savings{" +
-                "grandchildId=" + grandchildId +
+        return "SavingsPromise{" +
+                "savingsPromiseId=" + savingsPromiseId +
+                ", grandchildId=" + grandchildId +
                 ", balance=" + balance +
                 '}';
     }
