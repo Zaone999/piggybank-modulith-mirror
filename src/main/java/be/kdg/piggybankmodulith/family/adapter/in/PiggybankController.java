@@ -7,6 +7,8 @@ import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankUseCase;
 import be.kdg.piggybankmodulith.family.port.in.DepositMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.DepositUseCase;
 import be.kdg.piggybankmodulith.family.port.in.ListPiggybanksQuery;
+import be.kdg.piggybankmodulith.family.port.in.WithdrawMoneyCommand;
+import be.kdg.piggybankmodulith.family.port.in.WithdrawUseCase;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,14 +27,17 @@ public class PiggybankController {
 
     private final CreatePiggybankUseCase createPiggybankUseCase;
     private final DepositUseCase depositUseCase;
+    private final WithdrawUseCase withdrawUseCase;
     private final ListPiggybanksQuery listPiggybanksQuery;
 
     public PiggybankController(
             CreatePiggybankUseCase createPiggybankUseCase,
             DepositUseCase depositUseCase,
+            WithdrawUseCase withdrawUseCase,
             ListPiggybanksQuery listPiggybanksQuery) {
         this.createPiggybankUseCase = createPiggybankUseCase;
         this.depositUseCase = depositUseCase;
+        this.withdrawUseCase = withdrawUseCase;
         this.listPiggybanksQuery = listPiggybanksQuery;
     }
 
@@ -51,6 +56,16 @@ public class PiggybankController {
             @RequestBody DepositRequest request) {
         DepositMoneyCommand command = new DepositMoneyCommand(ownerId, new Money(request.amount()));
         Piggybank piggybank = depositUseCase.deposit(command);
+
+        return PiggybankResponse.from(piggybank);
+    }
+
+    @PostMapping("/{ownerId}/withdrawals")
+    public PiggybankResponse withdraw(
+            @PathVariable UUID ownerId,
+            @RequestBody WithdrawRequest request) {
+        WithdrawMoneyCommand command = new WithdrawMoneyCommand(ownerId, new Money(request.amount()));
+        Piggybank piggybank = withdrawUseCase.withdraw(command);
 
         return PiggybankResponse.from(piggybank);
     }

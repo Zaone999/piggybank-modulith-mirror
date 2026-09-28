@@ -8,6 +8,7 @@ import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankUseCase;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankLoadPort;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankUpdatePort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ class DefaultCreatePiggybankUseCase implements CreatePiggybankUseCase {
     }
 
     @Override
+    @Transactional
     public Piggybank createPiggybank(CreatePiggybankCommand command) {
         GrandchildId ownerId = GrandchildId.of(command.ownerId());
 

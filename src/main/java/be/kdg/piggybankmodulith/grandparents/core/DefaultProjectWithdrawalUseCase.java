@@ -11,6 +11,7 @@ import be.kdg.piggybankmodulith.grandparents.port.out.SavingsPromiseUpdatePort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ class DefaultProjectWithdrawalUseCase implements ProjectWithdrawalUseCase {
     }
 
     @Override
+    @Transactional
     public void projectWithdrawal(ProjectWithdrawalCommand command) {
         // idempotent: an event we already projected has no effect a second time
         if (savingsEntryLoadPort.existsByEventId(command.eventId())) {

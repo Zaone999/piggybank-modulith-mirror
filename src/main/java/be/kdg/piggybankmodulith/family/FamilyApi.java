@@ -9,4 +9,6 @@ public interface FamilyApi {
     void createPiggybank(UUID ownerId);
 
     void deposit(UUID ownerId, Money amount);
+
+    void withdraw(UUID ownerId, Money amount);
 }

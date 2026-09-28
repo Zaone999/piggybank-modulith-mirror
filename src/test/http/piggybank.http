@@ -1,6 +1,6 @@
 # For manual deposits only, start with --piggybank.drip-enabled=false.
 # Otherwise, the scheduler also creates and tops up Bobby's separate piggybank.
-# Deposits address the ownerId, as in FamilyApi and DepositMoneyCommand.
+# Deposits and withdrawals address the ownerId, as in FamilyApi and the commands.
 
 @baseUrl = http://localhost:8080
 @ownerId = 4b3fa27a-5839-40dd-a05a-a62c71e610d7
@@ -19,6 +19,14 @@ Content-Type: application/json
 
 {
   "amount": 10
+}
+
+### Withdraw money (200 with the updated balance; refused when the balance is too low)
+POST {{baseUrl}}/piggybanks/{{ownerId}}/withdrawals
+Content-Type: application/json
+
+{
+  "amount": 5
 }
 
 ### List all piggybanks with their owner and balance

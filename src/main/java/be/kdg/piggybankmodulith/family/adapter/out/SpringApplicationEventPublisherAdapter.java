@@ -19,7 +19,6 @@ class SpringApplicationEventPublisherAdapter implements PiggybankUpdatePort {
     @Override
     public void update(Piggybank piggybank) {
         piggybank.getDomainEvents().forEach(applicationEventPublisher::publishEvent);
-
         piggybank.clearDomainEvents();
     }
 }

@@ -4,6 +4,7 @@ import be.kdg.piggybankmodulith.family.domain.Piggybank;
 import be.kdg.piggybankmodulith.family.port.in.ListPiggybanksQuery;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankLoadPort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -17,6 +18,7 @@ class DefaultListPiggybanksQuery implements ListPiggybanksQuery {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Piggybank> listPiggybanks() {
         return piggybankLoadPort.loadAll();
     }

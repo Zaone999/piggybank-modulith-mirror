@@ -22,10 +22,16 @@ public class SavingsPromise {
     private final List<DomainEvent> domainEvents = new ArrayList<>();
 
     public static SavingsPromise promise(GrandChildId grandchildId,  Money promiseBoundary) {
-        return new SavingsPromise(SavingsPromiseId.create(), grandchildId, Money.ZERO, promiseBoundary);
+        return new SavingsPromise(SavingsPromiseId.create(), grandchildId, Money.ZERO, promiseBoundary, false);
     }
 
-    private SavingsPromise(SavingsPromiseId savingsPromiseId, GrandChildId grandchildId, Money balance, Money promiseBoundary) {
+    public static SavingsPromise restore(SavingsPromiseId savingsPromiseId, GrandChildId grandchildId, Money balance,
+                                         Money promiseBoundary, boolean triggered) {
+        return new SavingsPromise(savingsPromiseId, grandchildId, balance, promiseBoundary, triggered);
+    }
+
+    private SavingsPromise(SavingsPromiseId savingsPromiseId, GrandChildId grandchildId, Money balance,
+                           Money promiseBoundary, boolean triggered) {
         if (balance.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Starting savings balance must not be negative");
         }
@@ -38,6 +44,7 @@ public class SavingsPromise {
         this.grandchildId = grandchildId;
         this.balance = balance;
         this.promiseBoundary = promiseBoundary;
+        this.triggered = triggered;
     }
 
     public void decreaseBalance(Money amount) {
@@ -49,11 +56,9 @@ public class SavingsPromise {
             throw new IllegalArgumentException("Balance decrease must not be negative");
         }
 
-        if (balance.isLessThan(amount)) {
-            throw new IllegalStateException("Savings balance must not become negative");
-        }
-
-        this.balance = balance.subtract(amount);
+        // a withdrawal is a fact from Family, not a request: it cannot be refused here,
+        // so money saved before the promise was made cannot push the balance below zero
+        this.balance = balance.isLessThan(amount) ? Money.ZERO : balance.subtract(amount);
 
         logger.info("Promise Balance decreased: {}", balance);
     }
@@ -83,6 +88,10 @@ public class SavingsPromise {
 
     public boolean notYetTriggered() {
         return !triggered;
+    }
+
+    public boolean isTriggered() {
+        return triggered;
     }
 
     public SavingsPromiseId getSavingsPromiseId() {

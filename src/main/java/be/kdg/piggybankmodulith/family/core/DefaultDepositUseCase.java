@@ -8,6 +8,7 @@ import be.kdg.piggybankmodulith.family.port.in.DepositUseCase;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankLoadPort;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankUpdatePort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ class DefaultDepositUseCase implements DepositUseCase {
     }
 
     @Override
+    @Transactional
     public Piggybank deposit(DepositMoneyCommand command) {
         GrandchildId ownerId = GrandchildId.of(command.ownerId());
         Piggybank piggybank = piggybankLoadPort.loadByOwnerId(ownerId)

@@ -4,6 +4,7 @@ import be.kdg.piggybankmodulith.common.Money;
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
+import be.kdg.piggybankmodulith.family.domain.exceptions.InsufficientFundsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,10 @@ public class Piggybank {
         return new Piggybank(owner, Money.ZERO);
     }
 
+    public static Piggybank restore(PiggybankId piggybankId, GrandchildId owner, Money balance) {
+        return new Piggybank(piggybankId, owner, balance);
+    }
+
     public boolean isOwnedBy(GrandchildId owner) {
         return this.owner.equals(owner);
     }
@@ -70,7 +75,8 @@ public class Piggybank {
         }
 
         if (balance.isLessThan(amount)) {
-            throw new IllegalStateException("Cannot take money out");//this can be a better exception similar to the rest
+            throw new InsufficientFundsException(
+                    "Cannot withdraw " + amount + " from a balance of " + balance);
         }
 
         this.balance = this.balance.subtract(amount);

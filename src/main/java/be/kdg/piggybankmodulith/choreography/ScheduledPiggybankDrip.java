@@ -26,8 +26,18 @@ public class ScheduledPiggybankDrip {
         this.familyApi = familyApi;
         this.grandparentsApi = grandparentsApi;
 
-        this.familyApi.createPiggybank(BOBBY_ID);
-        this.grandparentsApi.createSavingsPromise(BOBBY_ID, Money.FIFTY);
+        // the database outlives a restart: Bobby's piggybank and promise may already be there
+        try {
+            this.familyApi.createPiggybank(BOBBY_ID);
+        } catch (RuntimeException e) {
+            logger.info("Piggybank not created: {}", e.getMessage());
+        }
+
+        try {
+            this.grandparentsApi.createSavingsPromise(BOBBY_ID, Money.FIFTY);
+        } catch (RuntimeException e) {
+            logger.info("Savings promise not created: {}", e.getMessage());
+        }
     }
 
     @Scheduled(fixedRate = 2_500)
