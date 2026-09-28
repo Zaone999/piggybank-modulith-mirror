@@ -12,6 +12,8 @@ interface PiggybankEventJpaRepository extends JpaRepository<PiggybankEventJpaEnt
 
     List<PiggybankEventJpaEntity> findByOwnerOrderByPointInTimeAsc(UUID owner);
 
+    List<PiggybankEventJpaEntity> findAllByOrderByPointInTimeAsc();
+
     Optional<PiggybankEventJpaEntity> findByOwnerAndType(UUID owner, PiggybankEventType type);
 
     List<PiggybankEventJpaEntity> findByType(PiggybankEventType type);

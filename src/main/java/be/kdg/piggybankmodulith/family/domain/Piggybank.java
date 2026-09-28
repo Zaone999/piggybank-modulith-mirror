@@ -30,13 +30,10 @@ public class Piggybank {
     private final PiggybankId piggybankId;
     private final GrandchildId owner;
 
-    // the history: the events that are stored, replayed when the piggybank is loaded
     private final List<DomainEvent> eventStore = new ArrayList<>();
-    // what happened since: not stored or published yet
     private final List<DomainEvent> uncommittedEvents = new ArrayList<>();
     private final EntryWindow window;
 
-    // the balance of every event before the snapshot date; no snapshot yet: zero, and no date
     private Money baseSnapshotBalance = Money.ZERO;
     private LocalDateTime baseSnapshotDate;
 
@@ -56,9 +53,7 @@ public class Piggybank {
         return replay(piggybankId, owner, history, EntryWindow.all());
     }
 
-    /**
-     * Rebuilds a stored piggybank from its last snapshot and the events from the snapshot date on.
-     */
+
     public static Piggybank replayFromSnapshot(PiggybankId piggybankId, GrandchildId owner,
                                                Money baseSnapshotBalance, LocalDateTime baseSnapshotDate,
                                                List<DomainEvent> eventsSinceSnapshot) {
@@ -71,9 +66,6 @@ public class Piggybank {
         return piggybank;
     }
 
-    /**
-     * Rebuilds a stored piggybank from the events in the window only: a read-only view on part of its history.
-     */
     public static Piggybank replay(PiggybankId piggybankId, GrandchildId owner, List<DomainEvent> history,
                                    EntryWindow window) {
         Piggybank piggybank = new Piggybank(piggybankId, owner, window);
@@ -103,10 +95,6 @@ public class Piggybank {
         return balanceOf(baseSnapshotBalance, allEvents());
     }
 
-    /**
-     * Folds every event before the date into a new baseSnapshotBalance: the old one plus those events.
-     * The events from the date on are still replayed.
-     */
     public void takeSnapshot(LocalDateTime date) {
         requireEntireHistory();
         if (!uncommittedEvents.isEmpty()) {
@@ -127,9 +115,6 @@ public class Piggybank {
         return baseSnapshotBalance;
     }
 
-    /**
-     * Empty as long as no snapshot was taken.
-     */
     public Optional<LocalDateTime> getBaseSnapshotDate() {
         return Optional.ofNullable(baseSnapshotDate);
     }
@@ -138,11 +123,11 @@ public class Piggybank {
         return baseSnapshotDate == null || !event.eventPit().isBefore(baseSnapshotDate);
     }
 
-    private static Money balanceOf(Money start, List<DomainEvent> events) {
-        Money balance = start;
+    private static Money balanceOf(Money snapshotBalance, List<DomainEvent> events) {
+        Money balance = snapshotBalance;
         for (DomainEvent event : events) {
             balance = switch (event) {
-                case PiggybankCreatedEvent created -> balance;
+                case PiggybankCreatedEvent created -> balance; //prevent it to go in default
                 case MoneyDepositedEvent deposited -> balance.add(deposited.amount());
                 case MoneyWithdrawalEvent withdrawn -> balance.subtract(withdrawn.amount());
                 default -> throw new IllegalStateException("Unknown piggybank event: " + event);
@@ -177,9 +162,6 @@ public class Piggybank {
         LOGGER.info("Withdrawal from piggybank, current balance: {}", getBalance());
     }
 
-    /**
-     * The stored history that was replayed.
-     */
     public List<DomainEvent> getEventStore() {
         return List.copyOf(eventStore);
     }
@@ -201,7 +183,6 @@ public class Piggybank {
 
     private void requireEntireHistory() {
         if (!window.isAll()) {
-            // the rules need the balance of the entire history, not of part of it
             throw new IllegalStateException("A piggybank replayed for " + window + " is read-only");
         }
     }

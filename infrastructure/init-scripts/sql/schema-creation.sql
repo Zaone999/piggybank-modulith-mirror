@@ -36,6 +36,26 @@ CREATE TABLE kdg_family.piggybank_snapshot (
                            UNIQUE (piggybank_id, snapshot_date)
 );
 
+-- the query side (CQRS): read models shaped for one question each, rebuilt from the event store at will
+CREATE TABLE kdg_family.monthly_savings (
+                           id      UUID           PRIMARY KEY,
+                           owner   UUID           NOT NULL,
+                           month   DATE           NOT NULL,
+                           balance NUMERIC(19, 2) NOT NULL,
+                           UNIQUE (owner, month)
+);
+
+CREATE TABLE kdg_family.biggest_donation (
+                           owner         UUID           PRIMARY KEY,
+                           amount        NUMERIC(19, 2) NOT NULL,
+                           point_in_time TIMESTAMP      NOT NULL
+);
+
+-- the events the read models already handled
+CREATE TABLE kdg_family.projected_event (
+                           event_id UUID PRIMARY KEY
+);
+
 
 
 CREATE TABLE kdg_grandparents.savings_promise (

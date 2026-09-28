@@ -30,6 +30,8 @@ set "COMMANDS=%TEMP%\piggybank-commands-%RANDOM%.txt"
     echo piggybanks
     echo balance --owner %OWNER%
     echo balance --owner %OWNER% --month %MONTH%
+    echo best-month --owner %OWNER%
+    echo biggest-donation --owner %OWNER%
     echo exit
 ) > "%COMMANDS%"
 

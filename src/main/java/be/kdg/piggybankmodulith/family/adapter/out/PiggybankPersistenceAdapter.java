@@ -9,6 +9,7 @@ import be.kdg.piggybankmodulith.family.domain.EntryWindow;
 import be.kdg.piggybankmodulith.family.domain.GrandchildId;
 import be.kdg.piggybankmodulith.family.domain.Piggybank;
 import be.kdg.piggybankmodulith.family.domain.PiggybankId;
+import be.kdg.piggybankmodulith.family.port.out.PiggybankHistoryPort;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankLoadPort;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankSnapshotPort;
 import be.kdg.piggybankmodulith.family.port.out.PiggybankUpdatePort;
@@ -25,7 +26,8 @@ import java.util.UUID;
  */
 @Component
 @Order(1)
-class PiggybankPersistenceAdapter implements PiggybankLoadPort, PiggybankUpdatePort, PiggybankSnapshotPort {
+class PiggybankPersistenceAdapter
+        implements PiggybankLoadPort, PiggybankUpdatePort, PiggybankSnapshotPort, PiggybankHistoryPort {
 
     private final PiggybankEventJpaRepository repository;
     private final PiggybankSnapshotJpaRepository snapshotRepository;
@@ -63,6 +65,11 @@ class PiggybankPersistenceAdapter implements PiggybankLoadPort, PiggybankUpdateP
         repository.saveAll(piggybank.getDomainEvents().stream()
                 .map(event -> toJpaEntity(piggybank, event))
                 .toList());
+    }
+
+    @Override
+    public List<DomainEvent> loadAllEvents() {
+        return toDomainEvents(repository.findAllByOrderByPointInTimeAsc());
     }
 
     @Override

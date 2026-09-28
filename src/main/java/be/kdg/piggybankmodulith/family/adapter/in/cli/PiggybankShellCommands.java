@@ -8,8 +8,11 @@ import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankUseCase;
 import be.kdg.piggybankmodulith.family.port.in.DepositMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.DepositUseCase;
 import be.kdg.piggybankmodulith.family.port.in.BalanceForMonth;
+import be.kdg.piggybankmodulith.family.port.in.BestMonthQuery;
+import be.kdg.piggybankmodulith.family.port.in.BiggestDonationQuery;
 import be.kdg.piggybankmodulith.family.port.in.ListPiggybanksQuery;
 import be.kdg.piggybankmodulith.family.port.in.PiggybankBalanceQuery;
+import be.kdg.piggybankmodulith.family.port.in.RebuildStatisticsUseCase;
 import be.kdg.piggybankmodulith.family.port.in.RegisterBirthCommand;
 import be.kdg.piggybankmodulith.family.port.in.RegisterBirthUseCase;
 import be.kdg.piggybankmodulith.family.port.in.TakeSnapshotUseCase;
@@ -40,6 +43,9 @@ import java.util.stream.Collectors;
  *  balance --owner <owner> --month 2026-09
  *  snapshot
  *  snapshot --date 2026-09-01T00:00
+ *  best-month --owner <owner>
+ *  biggest-donation --owner <owner>
+ *  rebuild-statistics
  *  exit
  *
  * or run the same commands from a file with scripts/init-and-deposit.sh (or .bat on Windows)
@@ -56,6 +62,9 @@ public class PiggybankShellCommands {
     private final ListPiggybanksQuery listPiggybanksQuery;
     private final PiggybankBalanceQuery piggybankBalanceQuery;
     private final TakeSnapshotUseCase takeSnapshotUseCase;
+    private final BestMonthQuery bestMonthQuery;
+    private final BiggestDonationQuery biggestDonationQuery;
+    private final RebuildStatisticsUseCase rebuildStatisticsUseCase;
 
     public PiggybankShellCommands(
             RegisterBirthUseCase registerBirthUseCase,
@@ -64,7 +73,10 @@ public class PiggybankShellCommands {
             WithdrawUseCase withdrawUseCase,
             ListPiggybanksQuery listPiggybanksQuery,
             PiggybankBalanceQuery piggybankBalanceQuery,
-            TakeSnapshotUseCase takeSnapshotUseCase) {
+            TakeSnapshotUseCase takeSnapshotUseCase,
+            BestMonthQuery bestMonthQuery,
+            BiggestDonationQuery biggestDonationQuery,
+            RebuildStatisticsUseCase rebuildStatisticsUseCase) {
         this.registerBirthUseCase = registerBirthUseCase;
         this.createPiggybankUseCase = createPiggybankUseCase;
         this.depositUseCase = depositUseCase;
@@ -72,6 +84,9 @@ public class PiggybankShellCommands {
         this.listPiggybanksQuery = listPiggybanksQuery;
         this.piggybankBalanceQuery = piggybankBalanceQuery;
         this.takeSnapshotUseCase = takeSnapshotUseCase;
+        this.bestMonthQuery = bestMonthQuery;
+        this.biggestDonationQuery = biggestDonationQuery;
+        this.rebuildStatisticsUseCase = rebuildStatisticsUseCase;
     }
 
     @Command(name = "born", description = "Register the birth of a family member")
@@ -137,6 +152,26 @@ public class PiggybankShellCommands {
         takeSnapshotUseCase.takeSnapshots(new TakeSnapshotsCommand(snapshotDate));
 
         return "Snapshots taken on " + snapshotDate;
+    }
+
+    @Command(name = "best-month", description = "The best month to be the owner, from the read model")
+    public String bestMonth(@Option(longName = "owner", required = true) UUID ownerId) {
+        return bestMonthQuery.bestMonth(ownerId)
+                .map(best -> "Best month: " + best.month() + ", saved " + best.balance())
+                .orElse("Nothing saved yet");
+    }
+
+    @Command(name = "biggest-donation", description = "The biggest donation the owner received, from the read model")
+    public String biggestDonation(@Option(longName = "owner", required = true) UUID ownerId) {
+        return biggestDonationQuery.biggestDonation(ownerId)
+                .map(biggest -> "Biggest donation: " + biggest.amount() + " on " + biggest.pointInTime())
+                .orElse("No donation yet");
+    }
+
+    @Command(name = "rebuild-statistics", description = "Throw the read models away and replay every stored event into them")
+    public String rebuildStatistics() {
+        rebuildStatisticsUseCase.rebuildStatistics();
+        return "Statistics rebuilt";
     }
 
     @Command(name = "exit", description = "Stop the application")

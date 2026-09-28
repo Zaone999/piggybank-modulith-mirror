@@ -179,6 +179,39 @@ Accept: application/json
     });
 %}
 
+### Best month (CQRS): read from the monthly_savings read model, the piggybank is not loaded
+GET {{baseUrl}}/piggybanks/{{ownerId}}/best-month
+Accept: application/json
+
+> {%
+    client.test("The best month is this month", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.month === client.global.get("month"), "Expected this month");
+        client.assert(response.body.balance === 50, "Expected 50, got " + response.body.balance);
+    });
+%}
+
+### Biggest donation (CQRS): read from the biggest_donation read model
+GET {{baseUrl}}/piggybanks/{{ownerId}}/biggest-donation
+Accept: application/json
+
+> {%
+    client.test("The biggest donation is 20", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.amount === 20, "Expected 20, got " + response.body.amount);
+    });
+%}
+
+### The best month of an unknown owner: nothing in the read model
+GET {{baseUrl}}/piggybanks/00000000-0000-0000-0000-000000000000/best-month
+Accept: application/json
+
+> {%
+    client.test("An unknown owner has no best month", function () {
+        client.assert(response.status === 404, "Expected 404, got " + response.status);
+    });
+%}
+
 ### Balance for a month without events
 GET {{baseUrl}}/piggybanks/{{ownerId}}/balance/2026-09
 Accept: application/json

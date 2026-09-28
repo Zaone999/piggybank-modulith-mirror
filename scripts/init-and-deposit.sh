@@ -30,6 +30,8 @@ grandchildren
 piggybanks
 balance --owner $OWNER
 balance --owner $OWNER --month $MONTH
+best-month --owner $OWNER
+biggest-donation --owner $OWNER
 exit
 COMMANDS
 
