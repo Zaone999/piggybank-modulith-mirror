@@ -46,10 +46,6 @@ public class Piggybank {
         return new Piggybank(piggybankId, owner, balance);
     }
 
-    public boolean isOwnedBy(GrandchildId owner) {
-        return this.owner.equals(owner);
-    }
-
     public PiggybankId getPiggybankId() {
         return piggybankId;
     }
