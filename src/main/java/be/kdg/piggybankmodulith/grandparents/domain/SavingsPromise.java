@@ -58,8 +58,6 @@ public class SavingsPromise {
             throw new IllegalArgumentException("Balance decrease must not be negative");
         }
 
-        // a withdrawal is a fact from Family, not a request: it cannot be refused here,
-        // so money saved before the promise was made cannot push the balance below zero
         this.balance = balance.isLessThan(amount) ? Money.ZERO : balance.subtract(amount);
 
         logger.info("Promise Balance decreased: {}", balance);

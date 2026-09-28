@@ -4,6 +4,7 @@ import be.kdg.piggybankmodulith.common.Money;
 import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
+import be.kdg.piggybankmodulith.common.events.PiggybankCreatedEvent;
 import be.kdg.piggybankmodulith.family.domain.exceptions.InsufficientFundsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,9 @@ public class Piggybank {
     }
 
     public static Piggybank createForOwner(GrandchildId owner) {
-        return new Piggybank(owner, Money.ZERO);
+        Piggybank piggybank = new Piggybank(owner, Money.ZERO);
+        piggybank.domainEvents.add(new PiggybankCreatedEvent(owner.uuid()));
+        return piggybank;
     }
 
     public static Piggybank restore(PiggybankId piggybankId, GrandchildId owner, Money balance) {
