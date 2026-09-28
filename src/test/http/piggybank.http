@@ -180,7 +180,7 @@ Accept: application/json
 %}
 
 ### Balance for a month without events
-GET {{baseUrl}}/piggybanks/{{ownerId}}/balance/2020-01
+GET {{baseUrl}}/piggybanks/{{ownerId}}/balance/2026-09
 Accept: application/json
 
 > {%
