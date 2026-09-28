@@ -7,7 +7,9 @@ import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankCommand;
 import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankUseCase;
 import be.kdg.piggybankmodulith.family.port.in.DepositMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.DepositUseCase;
+import be.kdg.piggybankmodulith.family.port.in.BalanceForMonth;
 import be.kdg.piggybankmodulith.family.port.in.ListPiggybanksQuery;
+import be.kdg.piggybankmodulith.family.port.in.PiggybankBalanceQuery;
 import be.kdg.piggybankmodulith.family.port.in.RegisterBirthCommand;
 import be.kdg.piggybankmodulith.family.port.in.RegisterBirthUseCase;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawMoneyCommand;
@@ -17,6 +19,7 @@ import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.YearMonth;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,8 @@ import java.util.stream.Collectors;
  *  deposit --owner 89a7e903-4c29-4fba-ac52-253292126794 --amount 10
  *  withdraw --owner 89a7e903-4c29-4fba-ac52-253292126794 --amount 5
  *  piggybanks
+ *  balance --owner <owner>
+ *  balance --owner <owner> --month 2026-09
  *  exit
  *
  * or run the same commands from a file with scripts/init-and-deposit.sh (or .bat on Windows)
@@ -44,18 +49,21 @@ public class PiggybankShellCommands {
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
     private final ListPiggybanksQuery listPiggybanksQuery;
+    private final PiggybankBalanceQuery piggybankBalanceQuery;
 
     public PiggybankShellCommands(
             RegisterBirthUseCase registerBirthUseCase,
             CreatePiggybankUseCase createPiggybankUseCase,
             DepositUseCase depositUseCase,
             WithdrawUseCase withdrawUseCase,
-            ListPiggybanksQuery listPiggybanksQuery) {
+            ListPiggybanksQuery listPiggybanksQuery,
+            PiggybankBalanceQuery piggybankBalanceQuery) {
         this.registerBirthUseCase = registerBirthUseCase;
         this.createPiggybankUseCase = createPiggybankUseCase;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
         this.listPiggybanksQuery = listPiggybanksQuery;
+        this.piggybankBalanceQuery = piggybankBalanceQuery;
     }
 
     @Command(name = "born", description = "Register the birth of a family member")
@@ -100,6 +108,18 @@ public class PiggybankShellCommands {
         return listPiggybanksQuery.listPiggybanks().stream()
                 .map(piggybank -> "Owner " + piggybank.getOwner().uuid() + ": balance " + piggybank.getBalance())
                 .collect(Collectors.joining(System.lineSeparator()));
+    }
+
+    @Command(name = "balance", description = "Replay the events of a piggybank: the current balance, or the balance for one month")
+    public String balance(
+            @Option(longName = "owner", required = true) UUID ownerId,
+            @Option(longName = "month") String month) {
+        if (month == null) {
+            return "Current balance: " + piggybankBalanceQuery.currentBalance(ownerId);
+        }
+        YearMonth yearMonth = YearMonth.parse(month);
+        return "Balance for " + yearMonth + ": "
+                + piggybankBalanceQuery.balanceForMonth(new BalanceForMonth(ownerId, yearMonth));
     }
 
     @Command(name = "exit", description = "Stop the application")

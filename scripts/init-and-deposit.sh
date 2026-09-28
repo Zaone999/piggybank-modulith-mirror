@@ -9,6 +9,7 @@ cd "$(dirname "$0")/.."
 FIRST_NAME="${1:-Emma}"
 LAST_NAME="${2:-Peeters}"
 OWNER="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+MONTH="$(date +%Y-%m)"
 JAR="target/piggybank-modulith-0.0.1-SNAPSHOT.jar"
 
 if [ ! -f "$JAR" ]; then
@@ -27,6 +28,8 @@ withdraw --owner $OWNER --amount 10
 deposit --owner $OWNER --amount 20
 grandchildren
 piggybanks
+balance --owner $OWNER
+balance --owner $OWNER --month $MONTH
 exit
 COMMANDS
 

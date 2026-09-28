@@ -11,6 +11,7 @@ if "%FIRST_NAME%"=="" set "FIRST_NAME=Emma"
 set "LAST_NAME=%~2"
 if "%LAST_NAME%"=="" set "LAST_NAME=Peeters"
 for /f %%i in ('powershell -NoProfile -Command "[guid]::NewGuid().ToString()"') do set "OWNER=%%i"
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM"') do set "MONTH=%%i"
 set "JAR=target\piggybank-modulith-0.0.1-SNAPSHOT.jar"
 
 if not exist "%JAR%" (
@@ -27,6 +28,8 @@ set "COMMANDS=%TEMP%\piggybank-commands-%RANDOM%.txt"
     echo deposit --owner %OWNER% --amount 20
     echo grandchildren
     echo piggybanks
+    echo balance --owner %OWNER%
+    echo balance --owner %OWNER% --month %MONTH%
     echo exit
 ) > "%COMMANDS%"
 

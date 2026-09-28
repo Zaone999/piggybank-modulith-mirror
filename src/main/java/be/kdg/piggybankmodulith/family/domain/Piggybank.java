@@ -11,39 +11,52 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
+/**
+ * An event-sourced aggregate: it does not store its balance, it keeps every event that happened to it
+ * and replays them to know where it is. Replayed in an {@link EntryWindow}, it only sees the events in
+ * that window, and is read-only.
+ */
 public class Piggybank {
-
-    private final PiggybankId piggybankId;
-    private final GrandchildId owner;
-    private Money balance;
-
-    private final List<DomainEvent> domainEvents = new ArrayList<>();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Piggybank.class);
 
-    public Piggybank(GrandchildId owner, Money balance) {
-        this(PiggybankId.create(), owner, balance);
-    }
+    private final PiggybankId piggybankId;
+    private final GrandchildId owner;
 
-    public Piggybank(PiggybankId piggybankId, GrandchildId owner, Money balance) {
-        if (balance.isLessThan(Money.ZERO)) {
-            throw new IllegalArgumentException("Starting balance must not be negative");
-        }
+    // the history: the events that are stored, replayed when the piggybank is loaded
+    private final List<DomainEvent> eventStore = new ArrayList<>();
+    // what happened since: not stored or published yet
+    private final List<DomainEvent> uncommittedEvents = new ArrayList<>();
+    private final EntryWindow window;
 
-        this.piggybankId = piggybankId;
-        this.owner = owner;
-        this.balance = balance;
+    private Piggybank(PiggybankId piggybankId, GrandchildId owner, EntryWindow window) {
+        this.piggybankId = Objects.requireNonNull(piggybankId, "Piggybank ID must not be null");
+        this.owner = Objects.requireNonNull(owner, "Owner must not be null");
+        this.window = Objects.requireNonNull(window, "Entry window must not be null");
     }
 
     public static Piggybank createForOwner(GrandchildId owner) {
-        Piggybank piggybank = new Piggybank(owner, Money.ZERO);
-        piggybank.domainEvents.add(new PiggybankCreatedEvent(owner.uuid()));
+        Piggybank piggybank = new Piggybank(PiggybankId.create(), owner, EntryWindow.all());
+        piggybank.uncommittedEvents.add(new PiggybankCreatedEvent(owner.uuid()));
         return piggybank;
     }
 
-    public static Piggybank restore(PiggybankId piggybankId, GrandchildId owner, Money balance) {
-        return new Piggybank(piggybankId, owner, balance);
+    public static Piggybank replay(PiggybankId piggybankId, GrandchildId owner, List<DomainEvent> history) {
+        return replay(piggybankId, owner, history, EntryWindow.all());
+    }
+
+    /**
+     * Rebuilds a stored piggybank from the events in the window only: a read-only view on part of its history.
+     */
+    public static Piggybank replay(PiggybankId piggybankId, GrandchildId owner, List<DomainEvent> history,
+                                   EntryWindow window) {
+        Piggybank piggybank = new Piggybank(piggybankId, owner, window);
+        history.stream()
+                .filter(event -> window.contains(event.eventPit()))
+                .forEach(piggybank.eventStore::add);
+        return piggybank;
     }
 
     public boolean isOwnedBy(GrandchildId owner) {
@@ -58,51 +71,86 @@ public class Piggybank {
         return owner;
     }
 
+    public EntryWindow getWindow() {
+        return window;
+    }
+
     public Money getBalance() {
+        Money balance = Money.ZERO;
+        for (DomainEvent event : allEvents()) {
+            balance = switch (event) {
+                case PiggybankCreatedEvent created -> balance;
+                case MoneyDepositedEvent deposited -> balance.add(deposited.amount());
+                case MoneyWithdrawalEvent withdrawn -> balance.subtract(withdrawn.amount());
+                default -> throw new IllegalStateException("Unknown piggybank event: " + event);
+            };
+        }
         return balance;
     }
 
     public void deposit(Money amount) {
+        requireEntireHistory();
         if (amount.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Deposit amount must not be negative");
         }
 
-        this.balance = this.balance.add(amount);
-        this.domainEvents.add(new MoneyDepositedEvent(owner.uuid(), amount));
-        LOGGER.info("Deposit to piggybank, current balance: {}", balance);
+        uncommittedEvents.add(new MoneyDepositedEvent(owner.uuid(), amount));
+        LOGGER.info("Deposit to piggybank, current balance: {}", getBalance());
     }
 
     public void withdraw(Money amount) {
+        requireEntireHistory();
         if (amount.isLessThan(Money.ZERO)) {
             throw new IllegalArgumentException("Withdrawal amount must not be negative");
         }
 
+        Money balance = getBalance();
         if (balance.isLessThan(amount)) {
             throw new InsufficientFundsException(
                     "Cannot withdraw " + amount + " from a balance of " + balance);
         }
 
-        this.balance = this.balance.subtract(amount);
-        this.domainEvents.add(new MoneyWithdrawalEvent(owner.uuid(), amount));
-        LOGGER.info("Withdrawal from piggybank, current balance: {}", balance);
+        uncommittedEvents.add(new MoneyWithdrawalEvent(owner.uuid(), amount));
+        LOGGER.info("Withdrawal from piggybank, current balance: {}", getBalance());
     }
 
+    /**
+     * The stored history that was replayed.
+     */
+    public List<DomainEvent> getEventStore() {
+        return List.copyOf(eventStore);
+    }
+
+    public List<DomainEvent> getDomainEvents() {
+        return List.copyOf(uncommittedEvents);
+    }
+
+    public void clearDomainEvents() {
+        eventStore.addAll(uncommittedEvents);
+        uncommittedEvents.clear();
+    }
+
+    private List<DomainEvent> allEvents() {
+        List<DomainEvent> all = new ArrayList<>(eventStore);
+        all.addAll(uncommittedEvents);
+        return all;
+    }
+
+    private void requireEntireHistory() {
+        if (!window.isAll()) {
+            // the rules need the balance of the entire history, not of part of it
+            throw new IllegalStateException("A piggybank replayed for " + window + " is read-only");
+        }
+    }
 
     @Override
     public String toString() {
         return "Piggybank{" +
                 "piggybankId=" + piggybankId +
                 ", owner=" + owner +
-                ", balance=" + balance +
-                ", domainEvents=" + domainEvents +
+                ", window=" + window +
+                ", eventStore=" + eventStore +
+                ", uncommittedEvents=" + uncommittedEvents +
                 '}';
-    }
-
-    public List<DomainEvent> getDomainEvents() {
-        return List.copyOf(domainEvents);
-    }
-
-    public void clearDomainEvents() {
-        domainEvents.clear();
     }
 }

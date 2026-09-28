@@ -13,11 +13,21 @@ CREATE TABLE kdg_family.family_member (
                            last_name  VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE kdg_family.piggybank (
-                           uuid    UUID           PRIMARY KEY,
-                           owner   UUID           NOT NULL UNIQUE,
-                           balance NUMERIC(19, 2) NOT NULL
+-- the event store of the piggybanks: one row per event, only ever inserted
+CREATE TABLE kdg_family.piggybank_event (
+                           event_id      UUID           PRIMARY KEY,
+                           piggybank_id  UUID           NOT NULL,
+                           owner         UUID           NOT NULL,
+                           version       INTEGER        NOT NULL,
+                           type          VARCHAR(20)    NOT NULL,
+                           amount        NUMERIC(19, 2),
+                           point_in_time TIMESTAMP      NOT NULL,
+                           UNIQUE (piggybank_id, version)
 );
+
+-- one piggybank per owner: only one CREATED event, the first one, per owner
+CREATE UNIQUE INDEX piggybank_event_one_piggybank_per_owner
+    ON kdg_family.piggybank_event (owner) WHERE version = 1;
 
 
 

@@ -1,19 +1,30 @@
 # The same steps as scripts/init-and-deposit.sh (.bat), which runs them through the CLI.
-# A family member is born first; its id is the ownerId of the piggybank.
+# Every request tests its response: run the whole file in IntelliJ and check the test results.
+# The first request picks a new family member, so the file can run again and again.
 # Deposits and withdrawals address the ownerId, as in the commands.
 
 @baseUrl = http://localhost:8080
-@ownerId = 89a7e903-4c29-4fba-ac52-253292126794
 
 ### A family member is born (201): the grandparents project it as a grandchild
 POST {{baseUrl}}/family-members
 Content-Type: application/json
 
 {
-  "familyMemberId": "{{ownerId}}",
+  "familyMemberId": "{{$random.uuid}}",
   "firstName": "Emma",
   "lastName": "Peeters"
 }
+
+> {%
+    client.test("A family member is born", function () {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+        client.assert(response.body.firstName === "Emma", "Expected Emma");
+        client.assert(response.body.lastName === "Peeters", "Expected Peeters");
+    });
+    client.global.set("ownerId", response.body.familyMemberId);
+    const today = new Date();
+    client.global.set("month", today.getFullYear() + "-" + String(today.getMonth() + 1).padStart(2, "0"));
+%}
 
 ### Create a piggybank (201): the grandparents make a savings promise
 POST {{baseUrl}}/piggybanks
@@ -23,6 +34,28 @@ Content-Type: application/json
   "ownerId": "{{ownerId}}"
 }
 
+> {%
+    client.test("A new piggybank is empty", function () {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+        client.assert(response.body.ownerId === client.global.get("ownerId"), "Expected the new owner");
+        client.assert(response.body.balance === 0, "Expected 0, got " + response.body.balance);
+    });
+%}
+
+### A second piggybank for the same owner is refused
+POST {{baseUrl}}/piggybanks
+Content-Type: application/json
+
+{
+  "ownerId": "{{ownerId}}"
+}
+
+> {%
+    client.test("A second piggybank is refused", function () {
+        client.assert(response.status >= 400, "Expected a refusal, got " + response.status);
+    });
+%}
+
 ### Deposit money (200 with the updated balance)
 POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
 Content-Type: application/json
@@ -30,6 +63,13 @@ Content-Type: application/json
 {
   "amount": 20
 }
+
+> {%
+    client.test("Deposit 20", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.balance === 20, "Expected 20, got " + response.body.balance);
+    });
+%}
 
 ### Deposit money again
 POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
@@ -39,13 +79,41 @@ Content-Type: application/json
   "amount": 20
 }
 
-### Withdraw money (200 with the updated balance; refused when the balance is too low)
+> {%
+    client.test("Deposit 20 again", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.balance === 40, "Expected 40, got " + response.body.balance);
+    });
+%}
+
+### Withdraw money (200 with the updated balance)
 POST {{baseUrl}}/piggybanks/{{ownerId}}/withdrawals
 Content-Type: application/json
 
 {
   "amount": 10
 }
+
+> {%
+    client.test("Withdraw 10", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.balance === 30, "Expected 30, got " + response.body.balance);
+    });
+%}
+
+### Withdraw more than the balance: refused, and nothing changes
+POST {{baseUrl}}/piggybanks/{{ownerId}}/withdrawals
+Content-Type: application/json
+
+{
+  "amount": 1000
+}
+
+> {%
+    client.test("Withdrawing more than the balance is refused", function () {
+        client.assert(response.status >= 400, "Expected a refusal, got " + response.status);
+    });
+%}
 
 ### Deposit money a third time: the savings promise of 50 is reached
 POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
@@ -55,10 +123,79 @@ Content-Type: application/json
   "amount": 20
 }
 
+> {%
+    client.test("Deposit 20 a third time: the refused withdrawal changed nothing", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.balance === 50, "Expected 50, got " + response.body.balance);
+    });
+%}
+
 ### List the grandchildren the grandparents projected from the born events
 GET {{baseUrl}}/grandchildren
 Accept: application/json
 
+> {%
+    client.test("The grandparents projected the new grandchild", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        const grandchild = response.body.find(g => g.grandchildId === client.global.get("ownerId"));
+        client.assert(grandchild !== undefined, "Expected the new grandchild in the list");
+        client.assert(grandchild.firstName === "Emma" && grandchild.lastName === "Peeters", "Expected Emma Peeters");
+    });
+%}
+
 ### List all piggybanks with their owner and balance
 GET {{baseUrl}}/piggybanks
 Accept: application/json
+
+> {%
+    client.test("The new piggybank is in the list", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        const piggybank = response.body.find(p => p.ownerId === client.global.get("ownerId"));
+        client.assert(piggybank !== undefined, "Expected the new piggybank in the list");
+        client.assert(piggybank.balance === 50, "Expected 50, got " + piggybank.balance);
+    });
+%}
+
+### Current balance: replays the entire event flow
+GET {{baseUrl}}/piggybanks/{{ownerId}}/balance
+Accept: application/json
+
+> {%
+    client.test("Replaying the entire event flow gives the current balance", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.currentBalance === 50, "Expected 50, got " + response.body.currentBalance);
+    });
+%}
+
+### Balance for this month: replays only this month's events, deposits minus withdrawals
+GET {{baseUrl}}/piggybanks/{{ownerId}}/balance/{{month}}
+Accept: application/json
+
+> {%
+    client.test("This month holds every event", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.month === client.global.get("month"), "Expected this month");
+        client.assert(response.body.balance === 50, "Expected 50, got " + response.body.balance);
+    });
+%}
+
+### Balance for a month without events
+GET {{baseUrl}}/piggybanks/{{ownerId}}/balance/2020-01
+Accept: application/json
+
+> {%
+    client.test("A month without events has balance 0", function () {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+        client.assert(response.body.balance === 0, "Expected 0, got " + response.body.balance);
+    });
+%}
+
+### The balance of an unknown owner is refused
+GET {{baseUrl}}/piggybanks/00000000-0000-0000-0000-000000000000/balance
+Accept: application/json
+
+> {%
+    client.test("An unknown owner has no piggybank", function () {
+        client.assert(response.status >= 400, "Expected a refusal, got " + response.status);
+    });
+%}

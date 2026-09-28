@@ -6,7 +6,9 @@ import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankCommand;
 import be.kdg.piggybankmodulith.family.port.in.CreatePiggybankUseCase;
 import be.kdg.piggybankmodulith.family.port.in.DepositMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.DepositUseCase;
+import be.kdg.piggybankmodulith.family.port.in.BalanceForMonth;
 import be.kdg.piggybankmodulith.family.port.in.ListPiggybanksQuery;
+import be.kdg.piggybankmodulith.family.port.in.PiggybankBalanceQuery;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawMoneyCommand;
 import be.kdg.piggybankmodulith.family.port.in.WithdrawUseCase;
 import org.springframework.http.HttpStatus;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,16 +32,19 @@ public class PiggybankController {
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
     private final ListPiggybanksQuery listPiggybanksQuery;
+    private final PiggybankBalanceQuery piggybankBalanceQuery;
 
     public PiggybankController(
             CreatePiggybankUseCase createPiggybankUseCase,
             DepositUseCase depositUseCase,
             WithdrawUseCase withdrawUseCase,
-            ListPiggybanksQuery listPiggybanksQuery) {
+            ListPiggybanksQuery listPiggybanksQuery,
+            PiggybankBalanceQuery piggybankBalanceQuery) {
         this.createPiggybankUseCase = createPiggybankUseCase;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
         this.listPiggybanksQuery = listPiggybanksQuery;
+        this.piggybankBalanceQuery = piggybankBalanceQuery;
     }
 
     @PostMapping
@@ -68,6 +74,18 @@ public class PiggybankController {
         Piggybank piggybank = withdrawUseCase.withdraw(command);
 
         return PiggybankResponse.from(piggybank);
+    }
+
+    @GetMapping("/{ownerId}/balance")
+    public CurrentBalanceResponse currentBalance(@PathVariable UUID ownerId) {
+        return new CurrentBalanceResponse(ownerId, piggybankBalanceQuery.currentBalance(ownerId).value());
+    }
+
+    // month as 2026-09
+    @GetMapping("/{ownerId}/balance/{month}")
+    public MonthBalanceResponse balanceForMonth(@PathVariable UUID ownerId, @PathVariable YearMonth month) {
+        return new MonthBalanceResponse(ownerId, month,
+                piggybankBalanceQuery.balanceForMonth(new BalanceForMonth(ownerId, month)).value());
     }
 
     @GetMapping
