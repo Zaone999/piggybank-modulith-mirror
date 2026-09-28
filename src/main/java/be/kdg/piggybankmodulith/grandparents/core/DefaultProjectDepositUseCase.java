@@ -23,16 +23,19 @@ class DefaultProjectDepositUseCase implements ProjectDepositUseCase {
     private final SavingsEntryLoadPort savingsEntryLoadPort;
     private final SavingsEntryProjectionPort savingsEntryProjectionPort;
     private final SavingsPromiseLoadPort savingsPromiseLoadPort;
+    private final GrandchildNameResolver grandchildNameResolver;
     private final List<SavingsPromiseUpdatePort> savingsPromiseUpdatePorts;
 
     DefaultProjectDepositUseCase(
             SavingsEntryLoadPort savingsEntryLoadPort,
             SavingsEntryProjectionPort savingsEntryProjectionPort,
             SavingsPromiseLoadPort savingsPromiseLoadPort,
+            GrandchildNameResolver grandchildNameResolver,
             List<SavingsPromiseUpdatePort> savingsPromiseUpdatePorts) {
         this.savingsEntryLoadPort = savingsEntryLoadPort;
         this.savingsEntryProjectionPort = savingsEntryProjectionPort;
         this.savingsPromiseLoadPort = savingsPromiseLoadPort;
+        this.grandchildNameResolver = grandchildNameResolver;
         this.savingsPromiseUpdatePorts = List.copyOf(savingsPromiseUpdatePorts);
     }
 
@@ -40,6 +43,7 @@ class DefaultProjectDepositUseCase implements ProjectDepositUseCase {
     @Transactional
     public void projectDeposit(ProjectDepositCommand command) {
         //THIS IS AN EXAMPLE OF AN IDEMPOTENCY CHECK
+        //TYPICALLY THIS IS CHECKED IN AN EVENT STORE
         if (savingsEntryLoadPort.existsByEventId(command.eventId())) {
             logger.info("Deposit {} already projected, ignored", command.eventId());
             return;
@@ -49,10 +53,20 @@ class DefaultProjectDepositUseCase implements ProjectDepositUseCase {
         savingsEntryProjectionPort.save(SavingsEntry.deposit(
                 command.eventId(), grandchildId, command.amount(), command.pointInTime()));
 
+        String grandchildName = grandchildNameResolver.nameOf(grandchildId);
+
         savingsPromiseLoadPort.loadActivePromiseFor(grandchildId)
                 .ifPresent(savingsPromise -> {
                     savingsPromise.increaseBalance(command.amount());
                     savingsPromiseUpdatePorts.forEach(port -> port.update(savingsPromise));
+
+                    logger.info("{} saved {}, promise balance: {} of {}",
+                            grandchildName, command.amount(), savingsPromise.getBalance(),
+                            savingsPromise.getPromiseBoundary());
+                    if (savingsPromise.isTriggered()) {
+                        logger.info("{} reached the promise of {}: let's go shopping",
+                                grandchildName, savingsPromise.getPromiseBoundary());
+                    }
                 });
     }
 }

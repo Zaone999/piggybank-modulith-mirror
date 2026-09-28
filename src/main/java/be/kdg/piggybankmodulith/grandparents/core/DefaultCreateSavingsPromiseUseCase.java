@@ -7,6 +7,8 @@ import be.kdg.piggybankmodulith.grandparents.port.in.CreateSavingsPromiseCommand
 import be.kdg.piggybankmodulith.grandparents.port.in.CreateSavingsPromiseUseCase;
 import be.kdg.piggybankmodulith.grandparents.port.out.SavingsPromiseLoadPort;
 import be.kdg.piggybankmodulith.grandparents.port.out.SavingsPromiseUpdatePort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,13 +17,18 @@ import java.util.List;
 @Service
 class DefaultCreateSavingsPromiseUseCase implements CreateSavingsPromiseUseCase {
 
+    private static final Logger logger = LoggerFactory.getLogger(DefaultCreateSavingsPromiseUseCase.class);
+
     private final SavingsPromiseLoadPort savingsPromiseLoadPort;
+    private final GrandchildNameResolver grandchildNameResolver;
     private final List<SavingsPromiseUpdatePort> savingsPromiseUpdatePorts;
 
     DefaultCreateSavingsPromiseUseCase(
             SavingsPromiseLoadPort savingsPromiseLoadPort,
+            GrandchildNameResolver grandchildNameResolver,
             List<SavingsPromiseUpdatePort> savingsPromiseUpdatePorts) {
         this.savingsPromiseLoadPort = savingsPromiseLoadPort;
+        this.grandchildNameResolver = grandchildNameResolver;
         this.savingsPromiseUpdatePorts = List.copyOf(savingsPromiseUpdatePorts);
     }
 
@@ -38,6 +45,9 @@ class DefaultCreateSavingsPromiseUseCase implements CreateSavingsPromiseUseCase 
         SavingsPromise savingsPromise = SavingsPromise.promise(grandchildId, command.promiseBoundary());
 
         savingsPromiseUpdatePorts.forEach(port -> port.update(savingsPromise));
+
+        String grandchildName = grandchildNameResolver.nameOf(grandchildId);
+        logger.info("Grandparents promise {} a gift when {} is saved", grandchildName, command.promiseBoundary());
 
         return savingsPromise;
     }

@@ -23,23 +23,27 @@ class DefaultProjectWithdrawalUseCase implements ProjectWithdrawalUseCase {
     private final SavingsEntryLoadPort savingsEntryLoadPort;
     private final SavingsEntryProjectionPort savingsEntryProjectionPort;
     private final SavingsPromiseLoadPort savingsPromiseLoadPort;
+    private final GrandchildNameResolver grandchildNameResolver;
     private final List<SavingsPromiseUpdatePort> savingsPromiseUpdatePorts;
 
     DefaultProjectWithdrawalUseCase(
             SavingsEntryLoadPort savingsEntryLoadPort,
             SavingsEntryProjectionPort savingsEntryProjectionPort,
             SavingsPromiseLoadPort savingsPromiseLoadPort,
+            GrandchildNameResolver grandchildNameResolver,
             List<SavingsPromiseUpdatePort> savingsPromiseUpdatePorts) {
         this.savingsEntryLoadPort = savingsEntryLoadPort;
         this.savingsEntryProjectionPort = savingsEntryProjectionPort;
         this.savingsPromiseLoadPort = savingsPromiseLoadPort;
+        this.grandchildNameResolver = grandchildNameResolver;
         this.savingsPromiseUpdatePorts = List.copyOf(savingsPromiseUpdatePorts);
     }
 
     @Override
     @Transactional
     public void projectWithdrawal(ProjectWithdrawalCommand command) {
-        // idempotent: an event we already projected has no effect a second time
+        //THIS IS AN EXAMPLE OF AN IDEMPOTENCY CHECK
+        //TYPICALLY THIS IS CHECKED IN AN EVENT STORE
         if (savingsEntryLoadPort.existsByEventId(command.eventId())) {
             logger.info("Withdrawal {} already projected, ignored", command.eventId());
             return;
@@ -49,10 +53,16 @@ class DefaultProjectWithdrawalUseCase implements ProjectWithdrawalUseCase {
         savingsEntryProjectionPort.save(SavingsEntry.withdrawal(
                 command.eventId(), grandchildId, command.amount(), command.pointInTime()));
 
+        String grandchildName = grandchildNameResolver.nameOf(grandchildId);
+
         savingsPromiseLoadPort.loadActivePromiseFor(grandchildId)
                 .ifPresent(savingsPromise -> {
                     savingsPromise.decreaseBalance(command.amount());
                     savingsPromiseUpdatePorts.forEach(port -> port.update(savingsPromise));
+
+                    logger.info("{} took out {}, promise balance: {} of {}",
+                            grandchildName, command.amount(), savingsPromise.getBalance(),
+                            savingsPromise.getPromiseBoundary());
                 });
     }
 }

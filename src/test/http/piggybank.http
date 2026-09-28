@@ -1,9 +1,21 @@
+# The same steps as scripts/init-and-deposit.sh (.bat), which runs them through the CLI.
+# A family member is born first; its id is the ownerId of the piggybank.
 # Deposits and withdrawals address the ownerId, as in the commands.
 
 @baseUrl = http://localhost:8080
-@ownerId = 8c8c87c1-9b5f-4f73-9fa7-7f9b5c7f2296
+@ownerId = 89a7e903-4c29-4fba-ac52-253292126794
 
-### Create a piggybank (201)
+### A family member is born (201): the grandparents project it as a grandchild
+POST {{baseUrl}}/family-members
+Content-Type: application/json
+
+{
+  "familyMemberId": "{{ownerId}}",
+  "firstName": "Emma",
+  "lastName": "Peeters"
+}
+
+### Create a piggybank (201): the grandparents make a savings promise
 POST {{baseUrl}}/piggybanks
 Content-Type: application/json
 
@@ -16,7 +28,15 @@ POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
 Content-Type: application/json
 
 {
-  "amount": 10
+  "amount": 20
+}
+
+### Deposit money again
+POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
+Content-Type: application/json
+
+{
+  "amount": 20
 }
 
 ### Withdraw money (200 with the updated balance; refused when the balance is too low)
@@ -24,8 +44,20 @@ POST {{baseUrl}}/piggybanks/{{ownerId}}/withdrawals
 Content-Type: application/json
 
 {
-  "amount": 5
+  "amount": 10
 }
+
+### Deposit money a third time: the savings promise of 50 is reached
+POST {{baseUrl}}/piggybanks/{{ownerId}}/deposits
+Content-Type: application/json
+
+{
+  "amount": 20
+}
+
+### List the grandchildren the grandparents projected from the born events
+GET {{baseUrl}}/grandchildren
+Accept: application/json
 
 ### List all piggybanks with their owner and balance
 GET {{baseUrl}}/piggybanks

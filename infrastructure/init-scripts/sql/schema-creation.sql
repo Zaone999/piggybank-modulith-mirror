@@ -7,6 +7,12 @@ CREATE SCHEMA kdg_family;
 CREATE SCHEMA kdg_grandparents;
 
 
+CREATE TABLE kdg_family.family_member (
+                           uuid       UUID         PRIMARY KEY,
+                           first_name VARCHAR(255) NOT NULL,
+                           last_name  VARCHAR(255) NOT NULL
+);
+
 CREATE TABLE kdg_family.piggybank (
                            uuid    UUID           PRIMARY KEY,
                            owner   UUID           NOT NULL UNIQUE,
@@ -29,4 +35,10 @@ CREATE TABLE kdg_grandparents.savings_entry (
                            type          VARCHAR(20)    NOT NULL,
                            amount        NUMERIC(19, 2) NOT NULL,
                            point_in_time TIMESTAMP      NOT NULL
+);
+
+CREATE TABLE kdg_grandparents.grandchild (
+                           uuid       UUID         PRIMARY KEY,
+                           first_name VARCHAR(255) NOT NULL,
+                           last_name  VARCHAR(255) NOT NULL
 );
