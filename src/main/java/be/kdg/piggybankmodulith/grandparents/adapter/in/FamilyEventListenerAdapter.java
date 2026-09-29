@@ -13,9 +13,15 @@ import be.kdg.piggybankmodulith.grandparents.port.in.ProjectGrandchildCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.ProjectGrandchildUseCase;
 import be.kdg.piggybankmodulith.grandparents.port.in.ProjectWithdrawalCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.ProjectWithdrawalUseCase;
-import org.springframework.context.event.EventListener;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
+/**
+ * Each event reaches Grandparents after Family's transaction has committed, on another thread, in a new
+ * transaction of its own: @ApplicationModuleListener is @Async + @Transactional(REQUIRES_NEW) +
+ * @TransactionalEventListener. The Event Publication Registry stores every delivery before the commit,
+ * so a listener that fails stays on record (FAILED) instead of being lost.
+ */
 @Component
 class FamilyEventListenerAdapter {
 
@@ -35,25 +41,25 @@ class FamilyEventListenerAdapter {
         this.projectWithdrawalUseCase = projectWithdrawalUseCase;
     }
 
-    @EventListener
+    @ApplicationModuleListener
     void handleFamilyMemberBornEvent(FamilyMemberBornEvent event) {
         projectGrandchildUseCase.projectGrandchild(new ProjectGrandchildCommand(
                 event.familyMemberId(), event.firstName(), event.lastName()));
     }
 
-    @EventListener
+    @ApplicationModuleListener
     void handlePiggybankCreatedEvent(PiggybankCreatedEvent event) {
         createSavingsPromiseUseCase.createSavingsPromise(new CreateSavingsPromiseCommand(
                 event.owner(), SavingsPromise.DEFAULT_PROMISE_BOUNDARY));
     }
 
-    @EventListener
+    @ApplicationModuleListener
     void handleMoneyDepositedEvent(MoneyDepositedEvent event) {
         projectDepositUseCase.projectDeposit(new ProjectDepositCommand(
                 event.eventUUID(), event.owner(), event.amount(), event.eventPit()));
     }
 
-    @EventListener
+    @ApplicationModuleListener
     void handleMoneyWithdrawalEvent(MoneyWithdrawalEvent event) {
         projectWithdrawalUseCase.projectWithdrawal(new ProjectWithdrawalCommand(
                 event.eventUUID(), event.owner(), event.amount(), event.eventPit()));

@@ -2,6 +2,8 @@
 # Registers the birth of a family member, creates a piggybank for them and deposits 20 euros three times with a withdrawal of 10 euros after the second deposit, through the Spring Shell CLI adapter.
 # Usage: scripts/init-and-deposit.sh [first-name] [last-name]   (Emma Peeters when none are given)
 # Needs the database from infrastructure/docker-compose.yml to be running.
+# The application keeps running afterwards: Grandparents' listeners are asynchronous and need it to finish
+# their work. Stop it with Ctrl+C.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -27,7 +29,6 @@ withdraw --owner $OWNER --amount 10
 deposit --owner $OWNER --amount 20
 grandchildren
 piggybanks
-exit
 COMMANDS
 
 echo "Piggybank owner: $FIRST_NAME $LAST_NAME ($OWNER)"

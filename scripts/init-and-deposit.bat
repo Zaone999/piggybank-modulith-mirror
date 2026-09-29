@@ -2,6 +2,8 @@
 rem Registers the birth of a family member, creates a piggybank for them and deposits 20 euros three times with a withdrawal of 10 euros after the second deposit, through the Spring Shell CLI adapter.
 rem Usage: scripts\init-and-deposit.bat [first-name] [last-name]   (Emma Peeters when none are given)
 rem Needs the database from infrastructure\docker-compose.yml to be running.
+rem The application keeps running afterwards: Grandparents' listeners are asynchronous and need it to finish
+rem their work. Stop it with Ctrl+C.
 setlocal
 
 cd /d "%~dp0.."
@@ -27,7 +29,6 @@ set "COMMANDS=%TEMP%\piggybank-commands-%RANDOM%.txt"
     echo deposit --owner %OWNER% --amount 20
     echo grandchildren
     echo piggybanks
-    echo exit
 ) > "%COMMANDS%"
 
 echo Piggybank owner: %FIRST_NAME% %LAST_NAME% (%OWNER%)
