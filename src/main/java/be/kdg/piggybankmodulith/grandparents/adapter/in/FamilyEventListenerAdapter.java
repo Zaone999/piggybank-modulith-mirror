@@ -4,6 +4,7 @@ import be.kdg.piggybankmodulith.common.events.FamilyMemberBornEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
 import be.kdg.piggybankmodulith.common.events.PiggybankCreatedEvent;
+import be.kdg.piggybankmodulith.grandparents.adapter.GrandparentsRabbitTopology;
 import be.kdg.piggybankmodulith.grandparents.domain.SavingsPromise;
 import be.kdg.piggybankmodulith.grandparents.port.in.CreateSavingsPromiseCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.CreateSavingsPromiseUseCase;
@@ -13,16 +14,12 @@ import be.kdg.piggybankmodulith.grandparents.port.in.ProjectGrandchildCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.ProjectGrandchildUseCase;
 import be.kdg.piggybankmodulith.grandparents.port.in.ProjectWithdrawalCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.ProjectWithdrawalUseCase;
-import org.springframework.modulith.events.ApplicationModuleListener;
+import org.springframework.amqp.rabbit.annotation.RabbitHandler;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-/**
- * Each event reaches Grandparents after Family's transaction has committed, on another thread, in a new
- * transaction of its own: @ApplicationModuleListener is @Async + @Transactional(REQUIRES_NEW) +
- * @TransactionalEventListener. The Event Publication Registry stores every delivery before the commit,
- * so a listener that fails stays on record (FAILED) instead of being lost.
- */
 @Component
+@RabbitListener(queues = GrandparentsRabbitTopology.QUEUE)
 class FamilyEventListenerAdapter {
 
     private final ProjectGrandchildUseCase projectGrandchildUseCase;
@@ -41,25 +38,25 @@ class FamilyEventListenerAdapter {
         this.projectWithdrawalUseCase = projectWithdrawalUseCase;
     }
 
-    @ApplicationModuleListener
+    @RabbitHandler
     void handleFamilyMemberBornEvent(FamilyMemberBornEvent event) {
         projectGrandchildUseCase.projectGrandchild(new ProjectGrandchildCommand(
                 event.familyMemberId(), event.firstName(), event.lastName()));
     }
 
-    @ApplicationModuleListener
+    @RabbitHandler
     void handlePiggybankCreatedEvent(PiggybankCreatedEvent event) {
         createSavingsPromiseUseCase.createSavingsPromise(new CreateSavingsPromiseCommand(
                 event.owner(), SavingsPromise.DEFAULT_PROMISE_BOUNDARY));
     }
 
-    @ApplicationModuleListener
+    @RabbitHandler
     void handleMoneyDepositedEvent(MoneyDepositedEvent event) {
         projectDepositUseCase.projectDeposit(new ProjectDepositCommand(
                 event.eventUUID(), event.owner(), event.amount(), event.eventPit()));
     }
 
-    @ApplicationModuleListener
+    @RabbitHandler
     void handleMoneyWithdrawalEvent(MoneyWithdrawalEvent event) {
         projectWithdrawalUseCase.projectWithdrawal(new ProjectWithdrawalCommand(
                 event.eventUUID(), event.owner(), event.amount(), event.eventPit()));

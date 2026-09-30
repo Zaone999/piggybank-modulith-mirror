@@ -1,17 +1,18 @@
 package be.kdg.piggybankmodulith.family.adapter.in.listeners;
 
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
+import be.kdg.piggybankmodulith.family.adapter.FamilyRabbitTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.modulith.events.ApplicationModuleListener;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
 @Component
-class SpringApplicationEventListenerAdapter {
+class GrandparentsEventListenerAdapter {
 
-    private static final Logger log = LoggerFactory.getLogger(SpringApplicationEventListenerAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(GrandparentsEventListenerAdapter.class);
 
-    @ApplicationModuleListener
+    @RabbitListener(queues = FamilyRabbitTopology.QUEUE)
     void handlePromiseLimitBoundaryReachedEvent(PromiseLimitBoundaryReachedEvent event) {
         log.info("PROMISE LIMIT REACHED, LET'S GO SHOPPING");
     }
