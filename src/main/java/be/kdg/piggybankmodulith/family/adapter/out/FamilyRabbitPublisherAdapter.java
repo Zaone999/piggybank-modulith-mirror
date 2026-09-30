@@ -1,24 +1,17 @@
 package be.kdg.piggybankmodulith.family.adapter.out;
 
-import be.kdg.piggybankmodulith.common.events.DomainEvent;
 import be.kdg.piggybankmodulith.common.events.FamilyMemberBornEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
 import be.kdg.piggybankmodulith.common.events.PiggybankCreatedEvent;
 import be.kdg.piggybankmodulith.family.adapter.FamilyRabbitTopology;
-import be.kdg.piggybankmodulith.family.domain.FamilyMember;
-import be.kdg.piggybankmodulith.family.domain.Piggybank;
-import be.kdg.piggybankmodulith.family.port.out.FamilyMemberUpdatePort;
-import be.kdg.piggybankmodulith.family.port.out.PiggybankUpdatePort;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.core.annotation.Order;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
+// sends after the commit; a failed send stays FAILED in the Event Publication Registry
 @Component
-@Order(2)
-class FamilyRabbitPublisherAdapter implements PiggybankUpdatePort, FamilyMemberUpdatePort {
+class FamilyRabbitPublisherAdapter {
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -26,30 +19,23 @@ class FamilyRabbitPublisherAdapter implements PiggybankUpdatePort, FamilyMemberU
         this.rabbitTemplate = rabbitTemplate;
     }
 
-    @Override
-    public void update(Piggybank piggybank) {
-        publish(piggybank.getDomainEvents());
-        piggybank.clearDomainEvents();
+    @ApplicationModuleListener
+    void publish(FamilyMemberBornEvent event) {
+        rabbitTemplate.convertAndSend(FamilyRabbitTopology.EXCHANGE, FamilyRabbitTopology.MEMBER_BORN, event);
     }
 
-    @Override
-    public void update(FamilyMember familyMember) {
-        publish(familyMember.getDomainEvents());
-        familyMember.clearDomainEvents();
+    @ApplicationModuleListener
+    void publish(PiggybankCreatedEvent event) {
+        rabbitTemplate.convertAndSend(FamilyRabbitTopology.EXCHANGE, FamilyRabbitTopology.PIGGYBANK_CREATED, event);
     }
 
-    private void publish(List<DomainEvent> events) {
-        events.forEach(event ->
-                rabbitTemplate.convertAndSend(FamilyRabbitTopology.EXCHANGE, routingKeyOf(event), event));
+    @ApplicationModuleListener
+    void publish(MoneyDepositedEvent event) {
+        rabbitTemplate.convertAndSend(FamilyRabbitTopology.EXCHANGE, FamilyRabbitTopology.MONEY_DEPOSITED, event);
     }
 
-    private static String routingKeyOf(DomainEvent event) {
-        return switch (event) {
-            case FamilyMemberBornEvent ignored -> FamilyRabbitTopology.MEMBER_BORN;
-            case PiggybankCreatedEvent ignored -> FamilyRabbitTopology.PIGGYBANK_CREATED;
-            case MoneyDepositedEvent ignored -> FamilyRabbitTopology.MONEY_DEPOSITED;
-            case MoneyWithdrawalEvent ignored -> FamilyRabbitTopology.MONEY_WITHDRAWN;
-            default -> throw new IllegalArgumentException("Family does not publish " + event.getClass().getSimpleName());
-        };
+    @ApplicationModuleListener
+    void publish(MoneyWithdrawalEvent event) {
+        rabbitTemplate.convertAndSend(FamilyRabbitTopology.EXCHANGE, FamilyRabbitTopology.MONEY_WITHDRAWN, event);
     }
 }
