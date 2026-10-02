@@ -38,7 +38,7 @@ public class Piggybank {
 
     public static Piggybank createForOwner(GrandchildId owner) {
         Piggybank piggybank = new Piggybank(owner, Money.ZERO);
-        piggybank.domainEvents.add(new PiggybankCreatedEvent(owner.uuid()));
+        piggybank.domainEvents.add(new PiggybankCreatedEvent(piggybank.piggybankId.uuid(), owner.uuid()));
         return piggybank;
     }
 
@@ -64,7 +64,7 @@ public class Piggybank {
         }
 
         this.balance = this.balance.add(amount);
-        this.domainEvents.add(new MoneyDepositedEvent(owner.uuid(), amount));
+        this.domainEvents.add(new MoneyDepositedEvent(piggybankId.uuid(), owner.uuid(), amount));
         LOGGER.info("Deposit to piggybank, current balance: {}", balance);
     }
 
@@ -79,7 +79,7 @@ public class Piggybank {
         }
 
         this.balance = this.balance.subtract(amount);
-        this.domainEvents.add(new MoneyWithdrawalEvent(owner.uuid(), amount));
+        this.domainEvents.add(new MoneyWithdrawalEvent(piggybankId.uuid(), owner.uuid(), amount));
         LOGGER.info("Withdrawal from piggybank, current balance: {}", balance);
     }
 

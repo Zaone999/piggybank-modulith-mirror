@@ -1,7 +1,7 @@
 package be.kdg.piggybankmodulith.family.adapter.in.listeners;
 
 import be.kdg.piggybankmodulith.common.events.PromiseLimitBoundaryReachedEvent;
-import be.kdg.piggybankmodulith.family.adapter.FamilyRabbitTopology;
+import be.kdg.piggybankmodulith.family.adapter.config.FamilyRabbitTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

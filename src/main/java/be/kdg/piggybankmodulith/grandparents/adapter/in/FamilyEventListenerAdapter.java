@@ -4,7 +4,7 @@ import be.kdg.piggybankmodulith.common.events.FamilyMemberBornEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyDepositedEvent;
 import be.kdg.piggybankmodulith.common.events.MoneyWithdrawalEvent;
 import be.kdg.piggybankmodulith.common.events.PiggybankCreatedEvent;
-import be.kdg.piggybankmodulith.grandparents.adapter.GrandparentsRabbitTopology;
+import be.kdg.piggybankmodulith.grandparents.adapter.config.GrandparentsRabbitTopology;
 import be.kdg.piggybankmodulith.grandparents.domain.SavingsPromise;
 import be.kdg.piggybankmodulith.grandparents.port.in.CreateSavingsPromiseCommand;
 import be.kdg.piggybankmodulith.grandparents.port.in.CreateSavingsPromiseUseCase;
