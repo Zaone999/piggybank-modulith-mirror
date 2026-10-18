@@ -36,3 +36,5 @@ build/
 infrastructure/idp_mysql_data
 infrastructure/postgresql
 infrastructure/rabbitmq
+### secrets of the IntelliJ HTTP client ###
+http-client.private.env.json
